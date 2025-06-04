@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import logging
-import subprocess
 
 from .git_parse_message import parse_message
 
@@ -23,29 +22,10 @@ def append_metadata_to_message(message: str, metadata: dict[str, str]) -> str:
     Returns:
         The updated commit message with trailers added
     """
-    # Ensure there's a blank line before trailers if the message doesn't end with one
-    processed_message = message
-    if message and not message.endswith("\n\n"):
-        if message.endswith("\n"):
-            processed_message = message + "\n"
-        else:
-            processed_message = message + "\n\n"
+    from .git_parse_message import interpret_trailers
 
-    result = subprocess.check_output(
-        [
-            "git",
-            "interpret-trailers",
-            *[f"--trailer={k}: {v}" for k, v in metadata.items()],
-        ],
-        input=processed_message.encode("utf-8"),
-    ).decode("utf-8")
-
-    # git interpret-trailers adds a trailing newline that we need to handle properly
-    # Remove one trailing newline if there are multiple
-    if result.endswith("\n\n"):
-        result = result[:-1]
-
-    return result
+    trailers_to_add = [f"{k}: {v}" for k, v in metadata.items()]
+    return interpret_trailers(message, trailers_to_add)
 
 
 def update_commit_message_with_description(
