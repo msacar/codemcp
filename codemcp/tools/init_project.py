@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import tomli
 
-from ..common import MAX_LINE_LENGTH, MAX_LINES_TO_READ, normalize_file_path
+from ..common import normalize_file_path
 from ..git import get_repository_root, is_git_repository
 from ..mcp import mcp
 
@@ -294,6 +294,16 @@ When you use any tool, you MUST always include this chat ID as the chat_id param
 # Git Commit Hash
 This project uses Git commit hashes to track changes across conversations. After each operation that modifies files, the current Git commit hash will be reported. The commit hash represents the current state of the repository.
 """
+
+        # Add command information if commands are available
+        if command_help:
+            system_prompt += (
+                f"\n- The run_command tool accepts these commands: {command_help}"
+            )
+
+        # Add command documentation if available
+        if command_docs:
+            system_prompt += _generate_command_docs(command_docs)
 
         # Combine system prompt, global prompt
         combined_prompt = system_prompt
