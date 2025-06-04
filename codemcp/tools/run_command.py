@@ -5,8 +5,8 @@ from typing import Optional
 
 from ..code_command import get_command_from_config, run_code_command
 from ..common import normalize_file_path
-from .commit_utils import append_commit_hash
 from ..mcp import mcp
+from .commit_utils import append_commit_hash
 
 __all__ = [
     "run_command",
