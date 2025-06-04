@@ -153,3 +153,65 @@ def is_trailer_block(lines: List[str]) -> bool:
     return (trailer_lines > 0 and non_trailer_lines == 0) or (
         has_git_generated_trailer and trailer_lines * 3 >= non_trailer_lines
     )
+
+
+def interpret_trailers(message: str, trailers_to_add: List[str]) -> str:
+    """
+    Add trailers to a commit message, mimicking git interpret-trailers.
+
+    Args:
+        message: The commit message to add trailers to
+        trailers_to_add: List of trailers to add in the format "Key: Value"
+
+    Returns:
+        The commit message with trailers added
+    """
+    subject, body, existing_trailers = parse_message(message)
+
+    # Create a new list with all trailers (existing + new)
+    all_trailers = []
+    if existing_trailers:
+        all_trailers.append(existing_trailers)
+
+    all_trailers.extend(trailers_to_add)
+
+    # Build the new message
+    new_message = subject
+
+    if body:
+        new_message += "\n\n" + body
+
+    if all_trailers:
+        # Handle empty message case specially
+        if not message:
+            new_message += "\n" + "\n".join(all_trailers) + "\n"
+        else:
+            # Add proper spacing before trailers for non-empty messages
+            if body:
+                new_message += "\n"
+            elif not body and existing_trailers:
+                new_message += "\n"
+            elif not body and not existing_trailers:
+                new_message += "\n"
+
+            new_message += "\n" + "\n".join(all_trailers)
+
+    # Handle trailing newlines carefully based on original message
+    if message and all_trailers:
+        # Count trailing newlines in original message
+        original_trailing_newlines = 0
+        for i in range(len(message) - 1, -1, -1):
+            if message[i] == "\n":
+                original_trailing_newlines += 1
+            else:
+                break
+
+        # Only preserve trailing newlines if the original had some AND we added trailers
+        # This handles the specific test cases with trailing newlines
+        if original_trailing_newlines > 0:
+            new_message += "\n" * original_trailing_newlines
+        elif original_trailing_newlines == 0:
+            # For normal messages without trailing newlines, add a single trailing newline
+            new_message += "\n"
+
+    return new_message
