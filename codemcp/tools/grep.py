@@ -56,6 +56,12 @@ async def git_grep(
     # Normalize the directory path
     absolute_path = normalize_file_path(path)
 
+    # Log for debugging
+    logging.info(
+        f"git_grep called with pattern='{pattern}', path='{path}', include='{include}'"
+    )
+    logging.info(f"Normalized path: {absolute_path}")
+
     # Verify this is a git repository - this check uses the mocked version in tests
     if not await is_git_repository(absolute_path):
         raise ValueError(f"The provided path is not in a git repository: {path}")
@@ -76,7 +82,7 @@ async def git_grep(
     # -l: list file names only
     # -i: case insensitive matching
     # -E: extended regexp for more complex patterns
-    args = ["git", "grep", "-li", pattern]
+    args = ["git", "grep", "-li", "-E"]
 
     # Check if the path is a file
     is_file = (
@@ -84,6 +90,9 @@ async def git_grep(
         if not os.environ.get("DESKAID_TESTING")
         else False
     )
+
+    # Now add the search pattern
+    args.append(pattern)
 
     # If it's a file, get the directory and restrict search to the specific file
     if is_file:
@@ -95,11 +104,18 @@ async def git_grep(
 
         # Update absolute_path to the directory containing the file
         absolute_path = file_dir
-    # Otherwise, add file pattern if specified
     elif include:
-        args.extend(["--", include])
+        # For include patterns, add them as pathspecs
+        # Handle multiple file patterns separated by commas
+        args.append("--")
+        if "," in include:
+            patterns = include.split(",")
+            for pat in patterns:
+                args.append(pat.strip())
+        else:
+            args.append(include)
 
-    logging.debug(f"Executing git grep command: {' '.join(args)}")
+    logging.debug(f"Executing git grep command: {' '.join(args)} in {absolute_path}")
 
     try:
         # Execute git grep command asynchronously
@@ -117,10 +133,17 @@ async def git_grep(
             logging.error(
                 f"git grep failed with exit code {result.returncode}: {result.stderr}",
             )
+            logging.error(f"Command was: {' '.join(args)}")
             raise subprocess.SubprocessError(f"git grep failed: {result.stderr}")
 
+        # Log the raw output for debugging
+        logging.debug(f"git grep stdout: {result.stdout}")
+        logging.debug(f"git grep stderr: {result.stderr}")
+
         # Process results - split by newline and filter empty lines
-        matches = [line.strip() for line in result.stdout.split() if line.strip()]
+        matches = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+        logging.debug(f"Processed {len(matches)} matches from git grep")
 
         # Convert to absolute paths
         matches = [

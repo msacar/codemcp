@@ -49,14 +49,14 @@ JS_TS_PATTERNS = {
 
 # Patterns for finding usages (not definitions)
 USAGE_PATTERNS = {
-    "function_call": r"((?<!function\s){symbol}\s*\(|<{symbol})",  # Function calls and JSX components
+    "function_call": r"{symbol}\s*\(",  # Function calls
+    "jsx_component": r"<{symbol}",  # JSX component usage
     "new_instance": r"new\s+{symbol}",
     "property_access": r"\.{symbol}",
-    "jsx_component": r"<{symbol}",  # JSX component usage
-    "import_named": r"import\s*\{{[^\}}]*{symbol}[^\}}]*\}}\s*from",  # Named imports only
+    "import_named": r"import\s*\{{[^}}]*{symbol}[^}}]*\}}\s*from",  # Named imports only
     "import_default": r"import\s+{symbol}\s+from",
     "require": r"require\s*\([^)]*{symbol}[^)]*\)",
-    "require_destructure": r"const\s*\{{[^\}}]*{symbol}[^\}}]*\}}\s*=\s*require",
+    "require_destructure": r"const\s*\{{[^}}]*{symbol}[^}}]*\}}\s*=\s*require",
     "type_usage": r":\s*{symbol}",
 }
 
@@ -165,13 +165,14 @@ async def find_definition(
 
             # Use git grep to find potential files
             try:
+                logging.info(f"Trying pattern {pattern_name}: {formatted_pattern}")
                 matched_files = await git_grep(formatted_pattern, path, include)
                 logging.info(
-                    f"Pattern {pattern_name} matched {len(matched_files)} files"
+                    f"Pattern {pattern_name} matched {len(matched_files)} files: {matched_files}"
                 )
                 files_to_check.update(matched_files)
             except Exception as e:
-                logging.debug(f"Pattern {pattern_name} failed: {e}")
+                logging.error(f"Pattern {pattern_name} failed with error: {e}")
                 continue
 
         logging.info(f"Total files to check: {len(files_to_check)}")
