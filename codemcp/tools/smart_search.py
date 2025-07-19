@@ -67,7 +67,7 @@ def escape_symbol_for_regex(symbol: str) -> str:
 
 
 async def get_line_context(
-    file_path: str, pattern: str, symbol: str
+    file_path: str, pattern: str, symbol: str, pattern_name: str = None
 ) -> List[Dict[str, any]]:
     """Get line numbers and context for matches in a file."""
     matches = []
@@ -90,6 +90,12 @@ async def get_line_context(
                 continue
 
             if compiled_pattern.search(line):
+                # Special handling for function_call pattern - exclude definitions
+                if pattern_name == "function_call" and "function " in line:
+                    # Check if this is a function definition
+                    if re.search(rf"function\s+{re.escape(symbol)}\s*\(", line):
+                        continue
+
                 # Get surrounding context (2 lines before and after)
                 start = max(0, line_num - 3)
                 end = min(len(lines), line_num + 2)
@@ -284,7 +290,9 @@ async def find_usages(
                 continue
 
             for pattern_name, pattern in USAGE_PATTERNS.items():
-                file_matches = await get_line_context(file_path, pattern, symbol)
+                file_matches = await get_line_context(
+                    file_path, pattern, symbol, pattern_name
+                )
                 for match in file_matches:
                     match["usage_type"] = pattern_name
                 all_matches.extend(file_matches)

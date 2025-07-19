@@ -119,7 +119,7 @@ class TestSmartSearchPatterns(unittest.TestCase):
             ("getData()", True),
             ("await getData()", True),
             ("result = getData(param)", True),
-            ("function getData()", False),  # Definition
+            ("function getData()", True),  # Now matches, but filtered in Python code
             ("class getData", False),  # Definition
         ]
 
@@ -238,7 +238,7 @@ if (getData() !== null) {
 
         # Test finding function calls
         pattern = USAGE_PATTERNS["function_call"]
-        matches = await get_line_context(test_file, pattern, "getData")
+        matches = await get_line_context(test_file, pattern, "getData", "function_call")
 
         # Should find 2 calls, not the definition
         self.assertEqual(len(matches), 2)
@@ -291,8 +291,8 @@ export default function App() {
         self.assertEqual(matches[0]["line"], 3)
 
         # Test finding Button usage
-        pattern = USAGE_PATTERNS["function_call"]
-        matches = await get_line_context(test_file, pattern, "Button")
+        pattern = USAGE_PATTERNS["jsx_component"]
+        matches = await get_line_context(test_file, pattern, "Button", "jsx_component")
         self.assertGreater(len(matches), 0)
 
 
