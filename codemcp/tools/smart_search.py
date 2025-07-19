@@ -49,7 +49,7 @@ JS_TS_PATTERNS = {
 
 # Patterns for finding usages (not definitions)
 USAGE_PATTERNS = {
-    "function_call": r"({symbol}\s*\(|<{symbol})",  # Function calls and JSX components
+    "function_call": r"((?<!function\s){symbol}\s*\(|<{symbol})",  # Function calls and JSX components
     "new_instance": r"new\s+{symbol}",
     "property_access": r"\.{symbol}",
     "jsx_component": r"<{symbol}",  # JSX component usage
