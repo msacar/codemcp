@@ -300,6 +300,21 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
 
             return await git_blame(**kwargs)
 
+        elif subtool == "find_definition":
+            from codemcp.tools.smart_search import find_definition
+
+            return await find_definition(**kwargs)
+
+        elif subtool == "find_usages":
+            from codemcp.tools.smart_search import find_usages
+
+            return await find_usages(**kwargs)
+
+        elif subtool == "find_imports":
+            from codemcp.tools.smart_search import find_imports
+
+            return await find_imports(**kwargs)
+
         else:
             raise ValueError(f"Unknown subtool: {subtool}")
 

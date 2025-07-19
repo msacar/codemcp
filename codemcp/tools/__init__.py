@@ -8,6 +8,7 @@ from .git_log import git_log
 from .git_show import git_show
 from .mv import mv
 from .rm import rm
+from .smart_search import find_definition, find_imports, find_usages
 
 __all__ = [
     "chmod",
@@ -17,4 +18,7 @@ __all__ = [
     "git_show",
     "mv",
     "rm",
+    "find_definition",
+    "find_usages",
+    "find_imports",
 ]
