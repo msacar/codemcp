@@ -21,43 +21,43 @@ __all__ = [
 # JavaScript/TypeScript specific patterns
 JS_TS_PATTERNS = {
     # Class definitions - simplified for git grep
-    "class": r"class\s+{symbol}",
-    "export_class": r"export\s+class\s+{symbol}",
-    "export_default_class": r"export\s+default\s+class\s+{symbol}",
+    "class": r"class[ ]+{symbol}",
+    "export_class": r"export[ ]+class[ ]+{symbol}",
+    "export_default_class": r"export[ ]+default[ ]+class[ ]+{symbol}",
     # Function definitions - avoid parentheses
-    "function": r"function\s+{symbol}",
-    "async_function": r"async\s+function\s+{symbol}",
-    "export_function": r"export\s+function\s+{symbol}",
+    "function": r"function[ ]+{symbol}",
+    "async_function": r"async[ ]+function[ ]+{symbol}",
+    "export_function": r"export[ ]+function[ ]+{symbol}",
     # Arrow functions and const functions
-    "const_function": r"const\s+{symbol}\s*=",
-    "let_function": r"let\s+{symbol}\s*=",
-    "var_function": r"var\s+{symbol}\s*=",
-    "export_const": r"export\s+const\s+{symbol}\s*=",
+    "const_function": r"const[ ]+{symbol}[ ]*=",
+    "let_function": r"let[ ]+{symbol}[ ]*=",
+    "var_function": r"var[ ]+{symbol}[ ]*=",
+    "export_const": r"export[ ]+const[ ]+{symbol}[ ]*=",
     # Methods in classes or objects - very simplified
     "method": r"{symbol}.*:",
     # TypeScript specific
-    "interface": r"interface\s+{symbol}",
-    "export_interface": r"export\s+interface\s+{symbol}",
-    "type_alias": r"type\s+{symbol}\s*=",
-    "export_type": r"export\s+type\s+{symbol}\s*=",
-    "enum": r"enum\s+{symbol}",
-    "const_enum": r"const\s+enum\s+{symbol}",
+    "interface": r"interface[ ]+{symbol}",
+    "export_interface": r"export[ ]+interface[ ]+{symbol}",
+    "type_alias": r"type[ ]+{symbol}[ ]*=",
+    "export_type": r"export[ ]+type[ ]+{symbol}[ ]*=",
+    "enum": r"enum[ ]+{symbol}",
+    "const_enum": r"const[ ]+enum[ ]+{symbol}",
     # React components (common patterns)
-    "react_component": r"const\s+{symbol}\s*[:=].*React",
-    "react_function_component": r"function\s+{symbol}.*return.*<",
+    "react_component": r"const[ ]+{symbol}[ ]*[:=].*React",
+    "react_function_component": r"function[ ]+{symbol}.*return.*<",
 }
 
 # Patterns for finding usages (not definitions)
 USAGE_PATTERNS = {
-    "function_call": r"{symbol}\s*\(",  # Function calls
+    "function_call": r"{symbol}[ ]*\(",  # Function calls
     "jsx_component": r"<{symbol}",  # JSX component usage
-    "new_instance": r"new\s+{symbol}",
+    "new_instance": r"new[ ]+{symbol}",
     "property_access": r"\.{symbol}",
-    "import_named": r"import\s*\{{[^}}]*{symbol}[^}}]*\}}\s*from",  # Named imports only
-    "import_default": r"import\s+{symbol}\s+from",
-    "require": r"require\s*\([^)]*{symbol}[^)]*\)",
-    "require_destructure": r"const\s*\{{[^}}]*{symbol}[^}}]*\}}\s*=\s*require",
-    "type_usage": r":\s*{symbol}",
+    "import_named": r"import[ ]*\{{[^}}]*{symbol}[^}}]*\}}[ ]*from",  # Named imports only
+    "import_default": r"import[ ]+{symbol}[ ]+from",
+    "require": r"require[ ]*\([^)]*{symbol}[^)]*\)",
+    "require_destructure": r"const[ ]*\{{[^}}]*{symbol}[^}}]*\}}[ ]*=[ ]*require",
+    "type_usage": r":[ ]*{symbol}",
 }
 
 
@@ -356,9 +356,9 @@ async def find_imports(
     try:
         import_patterns = {
             "es6_named": r"import.*{symbol}.*from",
-            "es6_default": r"import\s+{symbol}\s+from",
-            "es6_namespace": r"import\s*\*\s*as\s+{symbol}\s+from",
-            "require_const": r"const\s+{symbol}\s*=\s*require",
+            "es6_default": r"import[ ]+{symbol}[ ]+from",
+            "es6_namespace": r"import[ ]*\*[ ]*as[ ]+{symbol}[ ]+from",
+            "require_const": r"const[ ]+{symbol}[ ]*=[ ]*require",
             "require_destructure": r"const.*{symbol}.*=.*require",
             "dynamic_import": r"import.*{symbol}",
             "from_module": r"from.*{symbol}",

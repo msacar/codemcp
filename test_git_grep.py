@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Test git grep functionality."""
 
-import subprocess
 import os
+import subprocess
 import tempfile
 
 # Test git grep directly
