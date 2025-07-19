@@ -6,10 +6,10 @@ import os
 import re
 from typing import Dict, List, Optional
 
+from ..async_file_utils import async_open_text
 from ..mcp import mcp
 from .commit_utils import append_commit_hash
 from .grep import git_grep
-from .read_file import read_file
 
 __all__ = [
     "find_definition",
@@ -49,13 +49,14 @@ JS_TS_PATTERNS = {
 
 # Patterns for finding usages (not definitions)
 USAGE_PATTERNS = {
-    "function_call": r"{symbol}",  # Will match any occurrence, we'll filter later
+    "function_call": r"({symbol}\s*\(|<{symbol})",  # Function calls and JSX components
     "new_instance": r"new\s+{symbol}",
     "property_access": r"\.{symbol}",
-    "import_named": r"import.*{symbol}",
+    "jsx_component": r"<{symbol}",  # JSX component usage
+    "import_named": r"import\s*\{{[^\}}]*{symbol}[^\}}]*\}}\s*from",  # Named imports only
     "import_default": r"import\s+{symbol}\s+from",
-    "require": r"require.*{symbol}",
-    "require_destructure": r"const.*{symbol}.*=.*require",
+    "require": r"require\s*\([^)]*{symbol}[^)]*\)",
+    "require_destructure": r"const\s*\{{[^\}}]*{symbol}[^\}}]*\}}\s*=\s*require",
     "type_usage": r":\s*{symbol}",
 }
 
@@ -71,7 +72,7 @@ async def get_line_context(
     """Get line numbers and context for matches in a file."""
     matches = []
     try:
-        content = await read_file(file_path)
+        content = await async_open_text(file_path, encoding="utf-8", errors="replace")
         lines = content.split("\n")
 
         # Compile pattern with symbol
@@ -79,6 +80,15 @@ async def get_line_context(
         compiled_pattern = re.compile(regex_pattern, re.IGNORECASE)
 
         for line_num, line in enumerate(lines, 1):
+            # Skip comment lines
+            stripped_line = line.strip()
+            if (
+                stripped_line.startswith("//")
+                or stripped_line.startswith("/*")
+                or stripped_line.startswith("*")
+            ):
+                continue
+
             if compiled_pattern.search(line):
                 # Get surrounding context (2 lines before and after)
                 start = max(0, line_num - 3)

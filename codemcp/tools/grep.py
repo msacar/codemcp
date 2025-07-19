@@ -75,7 +75,8 @@ async def git_grep(
     # Build git grep command
     # -l: list file names only
     # -i: case insensitive matching
-    args = ["git", "grep", "-li", pattern]
+    # -E: extended regexp for more complex patterns
+    args = ["git", "grep", "-liE", pattern]
 
     # Check if the path is a file
     is_file = (
