@@ -6,8 +6,15 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-from tree_sitter import Node, Parser
-from tree_sitter_languages import get_parser
+try:
+    from tree_sitter import Node, Parser
+    from tree_sitter_languages import get_parser
+
+    TREE_SITTER_AVAILABLE = True
+except ImportError:
+    TREE_SITTER_AVAILABLE = False
+    Node = Any
+    Parser = Any
 
 from ..async_file_utils import async_open_text
 from ..common import normalize_file_path
@@ -29,6 +36,11 @@ class JavaScriptAnalyzer:
     """AST-based analyzer for JavaScript and TypeScript files."""
 
     def __init__(self):
+        if not TREE_SITTER_AVAILABLE:
+            logging.warning("Tree-sitter not available, using fallback regex mode")
+            self.parsers_available = False
+            return
+
         try:
             self.js_parser = get_parser("javascript")
             self.ts_parser = get_parser("typescript")
@@ -596,7 +608,7 @@ class JavaScriptAnalyzer:
         return params
 
 
-async def _regex_fallback_analysis(
+def _regex_fallback_analysis(
     file_path: str, content: str, analysis_type: str
 ) -> Dict[str, Any]:
     """Fallback to regex-based analysis when Tree-sitter fails."""
@@ -627,13 +639,18 @@ async def _regex_fallback_analysis(
 
     if analysis_type in ["summary", "imports", "all"]:
         imports = []
+        # Updated regex to handle both ES6 imports and CommonJS requires
         import_regex = re.compile(
-            r"(?:import|require)\s*\(?['\"]([^'\"]+)['\"]", re.IGNORECASE
+            r"(?:import\s+(?:[\w{},\s*]+\s+from\s+)?['\"]([^'\"]+)['\"]|require\s*\(\s*['\"]([^'\"]+)['\"]\s*\))",
+            re.IGNORECASE,
         )
         for line_num, line in enumerate(lines, 1):
             matches = import_regex.findall(line)
             for match in matches:
-                imports.append({"source": match, "line": line_num})
+                # match is a tuple, get the non-empty value
+                source = match[0] if match[0] else match[1]
+                if source:
+                    imports.append({"source": source, "line": line_num})
 
         if analysis_type == "imports":
             result["imports"] = imports
@@ -696,7 +713,7 @@ async def analyze_js(
     chat_id = "" if chat_id is None else chat_id
 
     # Normalize path
-    full_path = await normalize_file_path(path)
+    full_path = normalize_file_path(path)
 
     # Validate file extension
     valid_extensions = (".js", ".ts", ".jsx", ".tsx", ".mjs")
@@ -755,9 +772,7 @@ async def analyze_js(
 
     else:
         # Fallback to regex-based analysis
-        fallback_result = await _regex_fallback_analysis(
-            full_path, content, analysis_type
-        )
+        fallback_result = _regex_fallback_analysis(full_path, content, analysis_type)
         result.update(fallback_result)
 
     return append_commit_hash(json.dumps(result, indent=2), commit_hash)
@@ -796,7 +811,10 @@ async def find_js_references(
     chat_id = "" if chat_id is None else chat_id
 
     # Normalize path
-    full_path = await normalize_file_path(path)
+    full_path = normalize_file_path(path)
+    from pathlib import Path
+
+    path_obj = Path(full_path)
 
     analyzer = JavaScriptAnalyzer()
     all_references = []
@@ -804,8 +822,8 @@ async def find_js_references(
     files_with_references = 0
 
     # Determine files to analyze
-    if full_path.is_file():
-        files = [full_path]
+    if path_obj.is_file():
+        files = [str(path_obj)]
     else:
         # Find all JS/TS files in directory
         import glob
@@ -813,7 +831,7 @@ async def find_js_references(
         patterns = ["**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx", "**/*.mjs"]
         files = []
         for pattern in patterns:
-            files.extend(glob.glob(str(full_path / pattern), recursive=True))
+            files.extend(glob.glob(str(path_obj / pattern), recursive=True))
 
     # Analyze each file
     for file_path in files:
