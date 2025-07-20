@@ -1,0 +1,31 @@
+# Sample codemcp.toml configuration for AI-friendly project overview
+
+[project_structure]
+# Enable detailed format for comprehensive file listing
+# This format is optimized for AI coding assistants
+detailed_format = true
+
+# Show files grouped by type in detailed format
+show_files_by_type = true
+
+# Extensions to show in detail when using detailed format
+# Add more extensions based on your project's tech stack
+detail_extensions = [".py", ".js", ".ts", ".jsx", ".tsx", ".rs", ".go", ".java"]
+
+# Important directories to highlight (used in original format)
+important_dirs = ["src/", "tests/", "docs/"]
+
+# Main entry points to the application (used in original format)
+entry_points = ["main.py", "app.py", "index.js"]
+
+# Additional directories to ignore beyond defaults
+# Default ignored: .git, __pycache__, node_modules, .next, .venv, venv,
+#                  dist, build, out, target, .idea, .vscode, coverage,
+#                  .pytest_cache, .mypy_cache, .tox, htmlcov, *.egg-info
+ignored_dirs = ["tmp/", "cache/", "logs/"]
+
+# Enable tree view (used in original format)
+enable_tree_view = true
+
+# Show file counts in directory listings
+show_file_counts = true

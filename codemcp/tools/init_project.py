@@ -286,6 +286,10 @@ When making changes to files, first understand the file's code conventions. Mimi
 
 # Tool usage policy
 - If you intend to call multiple tools and there are no dependencies between the calls, make all of the independent calls in the same function_calls block.
+- The ProjectOverview tool provides a comprehensive view of the project structure. It supports two formats:
+  - Default format: Shows a tree view with entry points, important directories, and statistics
+  - Detailed format: Shows a timestamp, complete directory listing, and files grouped by extension - ideal for understanding project context
+  Configure the format in codemcp.toml with [project_structure] detailed_format = true
 
 # Chat ID and Git tracking
 This chat has been assigned a chat ID: {chat_id}

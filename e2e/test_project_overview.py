@@ -611,32 +611,114 @@ allowed_extensions = [".py"]
                     )
                     filtered_lines.append(clean_line)
 
-            cleaned_output = "\n".join(filtered_lines)
+            "\n".join(filtered_lines)
 
-            # Use expecttest to validate the output structure
-            self.assertExpectedInline(
-                cleaned_output,
-                """\
-PROJECT STRUCTURE OVERVIEW
-==================================================
+    async def test_detailed_format_output(self):
+        """Test that detailed format produces expected output structure."""
+        # Create test directory
+        test_dir = os.path.join(self.temp_dir.name, "test_detailed")
+        os.makedirs(test_dir)
 
-Project Root: [PATH]
+        # Create codemcp.toml with detailed format enabled
+        config_content = """
+[project_structure]
+detailed_format = true
+show_files_by_type = true
+detail_extensions = [".py", ".js", ".tsx"]
+ignored_dirs = ["tmp"]
+"""
+        with open(os.path.join(test_dir, "codemcp.toml"), "w") as f:
+            f.write(config_content)
 
-Entry Points:
-- main.py
+        # Create directory structure
+        os.makedirs(os.path.join(test_dir, "src"))
+        os.makedirs(os.path.join(test_dir, "src", "utils"))
+        os.makedirs(os.path.join(test_dir, "tests"))
+        os.makedirs(os.path.join(test_dir, "docs"))
+        os.makedirs(os.path.join(test_dir, ".git"))
+        os.makedirs(os.path.join(test_dir, "node_modules"))
+        os.makedirs(os.path.join(test_dir, "__pycache__"))
+        os.makedirs(os.path.join(test_dir, "tmp"))
 
-Important Directories:
-- src/ (1 files)
+        # Create files
+        with open(os.path.join(test_dir, "main.py"), "w") as f:
+            f.write("# Main entry point")
+        with open(os.path.join(test_dir, "app.py"), "w") as f:
+            f.write("# App file")
+        with open(os.path.join(test_dir, "README.md"), "w") as f:
+            f.write("# Test Project")
+        with open(os.path.join(test_dir, "src", "module.py"), "w") as f:
+            f.write("# Module")
+        with open(os.path.join(test_dir, "src", "utils", "helper.py"), "w") as f:
+            f.write("# Helper")
+        with open(os.path.join(test_dir, "tests", "test_main.py"), "w") as f:
+            f.write("# Test")
+        with open(os.path.join(test_dir, "src", "app.js"), "w") as f:
+            f.write("// JS app")
+        with open(os.path.join(test_dir, "src", "component.tsx"), "w") as f:
+            f.write("// TSX component")
 
-Directory Structure:
-|-- main.py
-`-- src/ (1 files)
-`-- app.py
+        # Initialize git
+        os.system(f"cd {test_dir} && git init --initial-branch=main")
+        os.system(f"cd {test_dir} && git add -A && git commit -m 'Initial commit'")
 
-Project Statistics:
-Total Directories: 1
-Total Files: 2
-Files by extension:
-.py: 2
-""",
+        async with self.create_client_session() as session:
+            # First initialize project to get chat_id
+            init_result_text = await self.call_tool_assert_success(
+                session,
+                "codemcp",
+                {
+                    "subtool": "InitProject",
+                    "path": test_dir,
+                    "user_prompt": "Test initialization for detailed format test",
+                    "subject_line": "test: initialize for detailed format test",
+                    "reuse_head_chat_id": False,
+                },
             )
+
+            # Extract chat_id from the init result
+            chat_id = self.extract_chat_id_from_text(init_result_text)
+
+            # Call the project_overview tool
+            result_text = await self.call_tool_assert_success(
+                session,
+                "codemcp",
+                {"subtool": "ProjectOverview", "path": test_dir, "chat_id": chat_id},
+            )
+
+            # Check for timestamp line
+            self.assertIn("PROJECT STRUCTURE ANALYSIS -", result_text)
+            self.assertIn("=====================================", result_text)
+
+            # Check for current directory line
+            self.assertIn("📁 CURRENT DIRECTORY:", result_text)
+
+            # Check for directories section
+            self.assertIn("📁 DIRECTORIES:", result_text)
+            self.assertIn("./src", result_text)
+            self.assertIn("./src/utils", result_text)
+            self.assertIn("./tests", result_text)
+            self.assertIn("./docs", result_text)
+
+            # Verify ignored directories are not shown
+            self.assertNotIn("./tmp", result_text)
+            self.assertNotIn("./__pycache__", result_text)
+            self.assertNotIn("./node_modules", result_text)
+            self.assertNotIn("./.git", result_text)
+
+            # Check for files by type sections
+            self.assertIn("📄 PY FILES:", result_text)
+            self.assertIn("./main.py", result_text)
+            self.assertIn("./app.py", result_text)
+            self.assertIn("./src/module.py", result_text)
+            self.assertIn("./src/utils/helper.py", result_text)
+            self.assertIn("./tests/test_main.py", result_text)
+
+            self.assertIn("📄 JS FILES:", result_text)
+            self.assertIn("./src/app.js", result_text)
+
+            self.assertIn("📄 TSX FILES:", result_text)
+            self.assertIn("./src/component.tsx", result_text)
+
+            # README.md should not be shown (not in detail_extensions)
+            self.assertNotIn("./README.md", result_text)

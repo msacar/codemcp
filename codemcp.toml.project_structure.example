@@ -26,3 +26,12 @@ show_file_counts = true
 
 # Show file sizes (can make output verbose)
 show_file_sizes = false
+
+# Enable detailed format for AI agents (shows comprehensive file listing)
+detailed_format = false
+
+# Show files grouped by type in detailed format
+show_files_by_type = true
+
+# Extensions to show in detail when using detailed format
+detail_extensions = [".py", ".js", ".ts", ".jsx", ".tsx"]

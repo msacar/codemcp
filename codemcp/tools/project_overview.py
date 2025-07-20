@@ -111,6 +111,15 @@ def load_project_structure_config(project_dir: str) -> Dict[str, Any]:
         "allowed_extensions": [],  # Empty means all extensions
         "show_file_counts": True,
         "show_file_sizes": False,
+        "detailed_format": False,  # Enable detailed format similar to paste.txt
+        "show_files_by_type": True,  # Show files grouped by extension
+        "detail_extensions": [
+            ".py",
+            ".js",
+            ".ts",
+            ".jsx",
+            ".tsx",
+        ],  # Extensions to show in detail
     }
 
     try:
@@ -141,6 +150,49 @@ def load_project_structure_config(project_dir: str) -> Dict[str, Any]:
     return default_config
 
 
+async def collect_all_paths(
+    project_dir: str, config: Dict[str, Any]
+) -> tuple[List[str], Dict[str, str]]:
+    """Collect all directories and files in the project.
+
+    Args:
+        project_dir: The project directory path
+        config: Project structure configuration
+
+    Returns:
+        Tuple of (directories list, files dict with paths as keys)
+    """
+    dirs_list = []
+    files_dict = {}
+    ignored_dirs = set(config.get("ignored_dirs", []))
+    allowed_extensions = set(config.get("allowed_extensions", []))
+
+    for root, dirs, files in os.walk(project_dir):
+        # Filter out ignored directories
+        dirs[:] = [d for d in dirs if d not in ignored_dirs]
+
+        # Add current directory to list
+        dirs_list.append(root)
+
+        # Process files
+        for file in files:
+            # Skip hidden files unless they're special
+            if file.startswith(".") and file not in [".gitignore", ".env.example"]:
+                continue
+
+            file_path = os.path.join(root, file)
+
+            # Check extension filter if set
+            if allowed_extensions:
+                ext = Path(file).suffix
+                if ext not in allowed_extensions:
+                    continue
+
+            files_dict[file_path] = file
+
+    return dirs_list, files_dict
+
+
 async def generate_project_overview(
     project_dir: str, config: Dict[str, Any], max_depth: int
 ) -> str:
@@ -154,60 +206,116 @@ async def generate_project_overview(
     Returns:
         Formatted project overview string
     """
+    from datetime import datetime
+
     output = []
-    output.append("PROJECT STRUCTURE OVERVIEW")
-    output.append("=" * 50)
-    output.append("")
-    output.append(f"📁 Project Root: {project_dir}")
-    output.append("")
 
-    # Show entry points if configured
-    if config.get("entry_points"):
-        output.append("🚀 Entry Points:")
-        for entry_point in config["entry_points"]:
-            entry_path = os.path.join(project_dir, entry_point)
-            if os.path.exists(entry_path):
-                output.append(f"  - {entry_point}")
+    # Use detailed format if configured
+    if config.get("detailed_format", False):
+        # Add timestamp
+        timestamp = datetime.now().strftime("%a %b %d %H:%M:%S +03 %Y")
+        output.append(f"PROJECT STRUCTURE ANALYSIS - {timestamp}")
+        output.append("=====================================")
+        output.append("")
+        output.append(f"📁 CURRENT DIRECTORY: {project_dir}")
         output.append("")
 
-    # Show important directories if configured
-    if config.get("important_dirs"):
-        output.append("⭐ Important Directories:")
-        for important_dir in config["important_dirs"]:
-            dir_path = os.path.join(project_dir, important_dir)
-            if os.path.exists(dir_path) and os.path.isdir(dir_path):
-                file_count = await count_files_in_dir(dir_path, config)
-                if config.get("show_file_counts", True):
-                    output.append(f"  - {important_dir} ({file_count} files)")
-                else:
-                    output.append(f"  - {important_dir}")
+        # Collect all directories and files
+        dirs_list, files_dict = await collect_all_paths(project_dir, config)
+
+        # Show all directories
+        output.append("📁 DIRECTORIES:")
+        for dir_path in sorted(dirs_list):
+            rel_path = os.path.relpath(dir_path, project_dir)
+            if rel_path == ".":
+                output.append(".")
+            else:
+                output.append(f"./{rel_path}")
         output.append("")
 
-    # Generate directory tree
-    if config.get("enable_tree_view", True):
-        output.append("📂 Directory Structure:")
-        tree = await build_directory_tree(project_dir, config, max_depth)
-        output.append(format_tree(tree, project_dir))
-        output.append("")
+        # Show files by type
+        if config.get("show_files_by_type", True):
+            # Group files by extension
+            files_by_ext = {}
+            for file_path in files_dict.keys():
+                ext = Path(file_path).suffix or ""
+                if ext not in files_by_ext:
+                    files_by_ext[ext] = []
+                files_by_ext[ext].append(file_path)
 
-    # File statistics
-    output.append("📊 Project Statistics:")
-    stats = await calculate_project_stats(project_dir, config)
-    output.append(f"  Total Directories: {stats['total_dirs']}")
-    output.append(f"  Total Files: {stats['total_files']}")
+            # Show files for specific extensions
+            target_extensions = config.get(
+                "detail_extensions", [".py", ".js", ".ts", ".jsx", ".tsx"]
+            )
 
-    if config.get("allowed_extensions"):
-        output.append("  Files by extension:")
-        for ext, count in sorted(stats["files_by_extension"].items()):
-            output.append(f"    {ext}: {count}")
+            for ext in target_extensions:
+                if ext in files_by_ext:
+                    ext_display = (
+                        f"📄 {ext.upper()[1:]} FILES:"
+                        if ext
+                        else "📄 FILES WITHOUT EXTENSION:"
+                    )
+                    output.append(ext_display)
+                    for file_path in sorted(files_by_ext[ext]):
+                        rel_path = os.path.relpath(file_path, project_dir)
+                        output.append(f"./{rel_path}")
+                    output.append("")
+
     else:
-        # Show top 5 extensions by count
-        output.append("  Top file types:")
-        sorted_exts = sorted(
-            stats["files_by_extension"].items(), key=lambda x: x[1], reverse=True
-        )[:5]
-        for ext, count in sorted_exts:
-            output.append(f"    {ext}: {count}")
+        # Original format for backward compatibility
+        output.append("PROJECT STRUCTURE OVERVIEW")
+        output.append("=" * 50)
+        output.append("")
+        output.append(f"📁 Project Root: {project_dir}")
+        output.append("")
+
+        # Show entry points if configured
+        if config.get("entry_points"):
+            output.append("🚀 Entry Points:")
+            for entry_point in config["entry_points"]:
+                entry_path = os.path.join(project_dir, entry_point)
+                if os.path.exists(entry_path):
+                    output.append(f"  - {entry_point}")
+            output.append("")
+
+        # Show important directories if configured
+        if config.get("important_dirs"):
+            output.append("⭐ Important Directories:")
+            for important_dir in config["important_dirs"]:
+                dir_path = os.path.join(project_dir, important_dir)
+                if os.path.exists(dir_path) and os.path.isdir(dir_path):
+                    file_count = await count_files_in_dir(dir_path, config)
+                    if config.get("show_file_counts", True):
+                        output.append(f"  - {important_dir} ({file_count} files)")
+                    else:
+                        output.append(f"  - {important_dir}")
+            output.append("")
+
+        # Generate directory tree
+        if config.get("enable_tree_view", True):
+            output.append("📂 Directory Structure:")
+            tree = await build_directory_tree(project_dir, config, max_depth)
+            output.append(format_tree(tree, project_dir))
+            output.append("")
+
+        # File statistics
+        output.append("📊 Project Statistics:")
+        stats = await calculate_project_stats(project_dir, config)
+        output.append(f"  Total Directories: {stats['total_dirs']}")
+        output.append(f"  Total Files: {stats['total_files']}")
+
+        if config.get("allowed_extensions"):
+            output.append("  Files by extension:")
+            for ext, count in sorted(stats["files_by_extension"].items()):
+                output.append(f"    {ext}: {count}")
+        else:
+            # Show top 5 extensions by count
+            output.append("  Top file types:")
+            sorted_exts = sorted(
+                stats["files_by_extension"].items(), key=lambda x: x[1], reverse=True
+            )[:5]
+            for ext, count in sorted_exts:
+                output.append(f"    {ext}: {count}")
 
     return "\n".join(output)
 
