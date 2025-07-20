@@ -324,6 +324,47 @@ The tool respects configuration in codemcp.toml under [project_structure]:
 - important_dirs: Highlights key directories
 - entry_points: Shows main entry points to the application
 - ignored_dirs: Excludes specified directories from analysis
+
+# JavaScript/TypeScript Code Analysis
+The analyze_js and find_js_references tools provide AST-based code understanding for JavaScript and TypeScript files (.js, .ts, .jsx, .tsx, .mjs):
+
+## analyze_js
+Use this tool to understand code structure without regex:
+- summary: Quick overview of functions, classes, imports, and exports
+- functions: Extract all functions with parameters, async/generator flags
+- classes: Find classes with inheritance information
+- imports: Analyze ES6 imports and CommonJS requires
+- exports: Track named and default exports
+
+## find_js_references
+Use this tool to find all usages of a symbol with semantic context:
+- Distinguishes between declarations, function calls, imports, JSX components
+- Supports context filtering (e.g., find only function calls)
+- Works across entire directories
+- Shows code snippets for each reference
+
+## rename_js_symbol
+Use this tool to safely rename symbols across all files:
+- Preview changes with dry_run=True before applying
+- Preserves code structure and handles edge cases
+- Optional scope filtering to limit renaming
+- Works with functions, classes, variables, and imports
+
+## add_js_parameter
+Use this tool to add parameters to functions:
+- Automatically updates all call sites
+- Supports TypeScript type annotations
+- Configurable parameter position
+- Optional default values
+
+## remove_unused_exports
+Use this tool to clean up unused code:
+- Finds exports not imported anywhere
+- Preview with dry_run=True
+- Exclude patterns for public APIs
+- Helps maintain clean codebases
+
+These tools use Tree-sitter for accurate AST parsing with automatic fallback to regex patterns if parsing fails.
 """
 
         # Combine system prompt, global prompt

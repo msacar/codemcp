@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # Implement code_command.py utilities here
 
+from .analyze_js import (
+    JavaScriptAnalyzer,
+    add_js_parameter,
+    analyze_js,
+    find_js_references,
+    remove_unused_exports,
+    rename_js_symbol,
+)
 from .chmod import chmod
 from .git_blame import git_blame
 from .git_diff import git_diff
@@ -11,14 +19,20 @@ from .rm import rm
 from .smart_search import find_definition, find_imports, find_usages
 
 __all__ = [
+    "add_js_parameter",
+    "analyze_js",
     "chmod",
+    "find_definition",
+    "find_imports",
+    "find_js_references",
+    "find_usages",
     "git_blame",
     "git_diff",
     "git_log",
     "git_show",
+    "JavaScriptAnalyzer",
     "mv",
+    "remove_unused_exports",
+    "rename_js_symbol",
     "rm",
-    "find_definition",
-    "find_usages",
-    "find_imports",
 ]
