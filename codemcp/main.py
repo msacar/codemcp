@@ -21,6 +21,7 @@ from .tools.grep import grep  # noqa: F401
 from .tools.init_project import init_project  # noqa: F401
 from .tools.ls import ls  # noqa: F401
 from .tools.mv import mv  # noqa: F401
+from .tools.project_overview import project_overview  # noqa: F401
 from .tools.read_file import read_file  # noqa: F401
 from .tools.rm import rm  # noqa: F401
 from .tools.run_command import run_command  # noqa: F401

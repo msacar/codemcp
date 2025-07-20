@@ -305,6 +305,23 @@ This project uses Git commit hashes to track changes across conversations. After
         if command_docs:
             system_prompt += _generate_command_docs(command_docs)
 
+        # Add project_overview tool documentation
+        system_prompt += """
+
+# Project Structure Understanding
+The project_overview tool provides a high-level overview of the project structure. Use it when you need to:
+- Understand the overall organization of a project
+- Find important directories and entry points
+- Get file counts and statistics about the codebase
+- Navigate large codebases efficiently
+
+The tool respects configuration in codemcp.toml under [project_structure]:
+- enable_tree_view: Shows directory tree visualization
+- important_dirs: Highlights key directories
+- entry_points: Shows main entry points to the application
+- ignored_dirs: Excludes specified directories from analysis
+"""
+
         # Combine system prompt, global prompt
         combined_prompt = system_prompt
         if project_prompt:

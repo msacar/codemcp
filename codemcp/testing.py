@@ -238,6 +238,11 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
 
             return await ls(**kwargs)
 
+        elif subtool == "ProjectOverview":
+            from codemcp.tools.project_overview import project_overview
+
+            return await project_overview(**kwargs)
+
         elif subtool == "InitProject":
             from codemcp.tools.init_project import init_project
 
