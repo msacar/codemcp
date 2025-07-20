@@ -775,7 +775,9 @@ async def analyze_js(
         fallback_result = _regex_fallback_analysis(full_path, content, analysis_type)
         result.update(fallback_result)
 
-    return append_commit_hash(json.dumps(result, indent=2), commit_hash)
+    result_json = json.dumps(result, indent=2)
+    result_with_hash, _ = await append_commit_hash(result_json, full_path, commit_hash)
+    return result_with_hash
 
 
 @mcp.tool()
@@ -933,7 +935,9 @@ async def find_js_references(
                 result["references_by_context"][context] = 0
             result["references_by_context"][context] += 1
 
-    return append_commit_hash(json.dumps(result, indent=2), commit_hash)
+    result_json = json.dumps(result, indent=2)
+    result_with_hash, _ = await append_commit_hash(result_json, full_path, commit_hash)
+    return result_with_hash
 
 
 @mcp.tool()
