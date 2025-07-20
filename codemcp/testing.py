@@ -320,6 +320,26 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
 
             return await find_imports(**kwargs)
 
+        elif subtool == "analyze_js":
+            from codemcp.tools.analyze_js import analyze_js
+
+            return await analyze_js(**kwargs)
+
+        elif subtool == "rename_js_symbol":
+            from codemcp.tools.analyze_js import rename_js_symbol
+
+            return await rename_js_symbol(**kwargs)
+
+        elif subtool == "add_js_parameter":
+            from codemcp.tools.analyze_js import add_js_parameter
+
+            return await add_js_parameter(**kwargs)
+
+        elif subtool == "remove_unused_exports":
+            from codemcp.tools.analyze_js import remove_unused_exports
+
+            return await remove_unused_exports(**kwargs)
+
         else:
             raise ValueError(f"Unknown subtool: {subtool}")
 

@@ -613,24 +613,43 @@ def _regex_fallback_analysis(
 ) -> Dict[str, Any]:
     """Fallback to regex-based analysis when Tree-sitter fails."""
     logging.info(f"Using regex fallback for {file_path}")
-    result = {}
+    result = {"fallback_mode": True}
 
     lines = content.split("\n")
 
     if analysis_type in ["summary", "functions", "all"]:
         functions = []
-        for pattern_name, pattern in JS_TS_PATTERNS.items():
-            if "function" in pattern_name or "method" in pattern_name:
-                # Simple function name extraction
-                regex = re.compile(
-                    r"(?:function|const|let|var|async)\s+(\w+)", re.IGNORECASE
-                )
-                for line_num, line in enumerate(lines, 1):
-                    matches = regex.findall(line)
-                    for match in matches:
+        # A set of regexes to find functions in various forms.
+        # This is a fallback and may not be perfect.
+        regexes = [
+            # function funcName, async function funcName
+            re.compile(r"(?:async\s+)?function\s+([a-zA-Z0-9_$]+)"),
+            # const funcName = ..., let funcName = ...
+            re.compile(r"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*="),
+            # methodName: function, methodName: async function
+            re.compile(r"([a-zA-Z0-9_$]+)\s*:\s*(?:async\s+)?function"),
+            # methodName() {, async methodName() {, static methodName() {
+            re.compile(r"(?:static\s+)?(?:async\s+)?(constructor|(?![0-9])\w+)\s*\([^)]*\)\s*{"),
+        ]
+
+        for line_num, line in enumerate(lines, 1):
+            for regex in regexes:
+                matches = regex.findall(line)
+                for match in matches:
+                    if match:
                         functions.append(
                             {"name": match, "line": line_num, "type": "regex_detected"}
                         )
+
+        # Remove duplicates that might be found by multiple regexes
+        unique_functions = []
+        seen = set()
+        for func in functions:
+            identifier = (func["name"], func["line"])
+            if identifier not in seen:
+                unique_functions.append(func)
+                seen.add(identifier)
+        functions = unique_functions
 
         if analysis_type == "functions":
             result["functions"] = functions
@@ -675,9 +694,6 @@ def _regex_fallback_analysis(
             result["exports"] = exports
         else:
             result["exports_count"] = len(exports)
-
-    if analysis_type == "summary":
-        result["fallback_mode"] = True
 
     return result
 
