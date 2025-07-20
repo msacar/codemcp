@@ -728,6 +728,13 @@ async def analyze_js(
     # Set default values
     chat_id = "" if chat_id is None else chat_id
 
+    # Validate analysis type
+    valid_analysis_types = {"summary", "functions", "classes", "imports", "exports", "all"}
+    if analysis_type not in valid_analysis_types:
+        return json.dumps(
+            {"error": f"Invalid analysis type: '{analysis_type}'. Must be one of {sorted(list(valid_analysis_types))}"}
+        )
+
     # Normalize path
     full_path = normalize_file_path(path)
 
