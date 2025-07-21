@@ -9,3 +9,6 @@ source .venv/bin/activate.fish
 
 # Install dependencies
 uv pip install -e ".[dev]"
+# Fallback to Install dependencies
+uv pip install --group dev
+

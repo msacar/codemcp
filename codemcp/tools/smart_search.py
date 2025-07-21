@@ -12,9 +12,9 @@ from .commit_utils import append_commit_hash
 from .grep import git_grep
 
 __all__ = [
-    "find_definition",
-    "find_usages",
-    "find_imports",
+    "grep_find_definition",
+    "grep_find_usages",
+    "grep_find_imports",
     "JS_TS_PATTERNS",
 ]
 
@@ -139,7 +139,7 @@ def _determine_definition_type(line: str, symbol: str) -> str:
 
 
 @mcp.tool()
-async def find_definition(
+async def grep_find_definition(
     symbol: str,
     path: str = ".",
     include: str = "*.js,*.jsx,*.ts,*.tsx,*.mjs,*.cjs",
@@ -231,7 +231,7 @@ async def find_definition(
 
 
 @mcp.tool()
-async def find_usages(
+async def grep_find_usages(
     symbol: str,
     path: str = ".",
     include: str = "*.js,*.jsx,*.ts,*.tsx,*.mjs,*.cjs",
@@ -340,7 +340,7 @@ async def find_usages(
 
 
 @mcp.tool()
-async def find_imports(
+async def grep_find_imports(
     module_or_symbol: str,
     path: str = ".",
     include: str = "*.js,*.jsx,*.ts,*.tsx,*.mjs,*.cjs",

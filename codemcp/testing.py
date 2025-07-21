@@ -306,19 +306,19 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
             return await git_blame(**kwargs)
 
         elif subtool == "find_definition":
-            from codemcp.tools.smart_search import find_definition
+            from codemcp.tools.smart_search import grep_find_definition
 
-            return await find_definition(**kwargs)
+            return await grep_find_definition(**kwargs)
 
         elif subtool == "find_usages":
-            from codemcp.tools.smart_search import find_usages
+            from codemcp.tools.smart_search import grep_find_usages
 
-            return await find_usages(**kwargs)
+            return await grep_find_usages(**kwargs)
 
         elif subtool == "find_imports":
-            from codemcp.tools.smart_search import find_imports
+            from codemcp.tools.smart_search import grep_find_imports
 
-            return await find_imports(**kwargs)
+            return await grep_find_imports(**kwargs)
 
         elif subtool == "analyze_js":
             from codemcp.tools.analyze_js import analyze_js

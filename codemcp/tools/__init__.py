@@ -16,16 +16,16 @@ from .git_log import git_log
 from .git_show import git_show
 from .mv import mv
 from .rm import rm
-from .smart_search import find_definition, find_imports, find_usages
+from .smart_search import grep_find_definition, grep_find_imports, grep_find_usages
 
 __all__ = [
     "add_js_parameter",
     "analyze_js",
     "chmod",
-    "find_definition",
-    "find_imports",
+    "grep_find_definition",
+    "grep_find_imports",
     "find_js_references",
-    "find_usages",
+    "grep_find_usages",
     "git_blame",
     "git_diff",
     "git_log",
