@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 
 try:
     from tree_sitter import Node, Parser
-    from tree_sitter_languages import get_parser
 
     TREE_SITTER_AVAILABLE = True
 except ImportError:
@@ -20,7 +19,6 @@ from ..async_file_utils import async_open_text
 from ..common import normalize_file_path
 from ..mcp import mcp
 from .commit_utils import append_commit_hash
-from .smart_search import JS_TS_PATTERNS, USAGE_PATTERNS
 
 __all__ = [
     "analyze_js",
@@ -42,10 +40,15 @@ class JavaScriptAnalyzer:
             return
 
         try:
+            # Get parsers from tree-sitter-languages
+            from tree_sitter_languages import get_parser
+
+            # Get pre-built parsers
             self.js_parser = get_parser("javascript")
             self.ts_parser = get_parser("typescript")
             self.tsx_parser = get_parser("tsx")
             self.jsx_parser = get_parser("javascript")  # JSX uses JS parser
+
             self.parsers_available = True
         except Exception as e:
             logging.warning(f"Failed to initialize Tree-sitter parsers: {e}")
@@ -679,15 +682,22 @@ async def analyze_js(
     # Perform analysis
     result = {"file": path}
 
-    if not tree or not analyzer.parsers_available:
+    # Check if parsers are available
+    if not analyzer.parsers_available:
+        return json.dumps({"error": "Tree-sitter parsers not available"})
+
+    # If tree is None, it could be a parsing error or empty file
+    # For empty files, we should still return valid structure
+    if not tree and content.strip():
+        # Non-empty file that failed to parse
         return json.dumps({"error": "Failed to parse file with Tree-sitter"})
 
     # AST-based analysis
     if analysis_type in ["summary", "all"]:
-        functions = analyzer.find_functions(tree)
-        classes = analyzer.find_classes(tree)
-        imports = analyzer.find_imports(tree)
-        exports = analyzer.find_exports(tree)
+        functions = analyzer.find_functions(tree) if tree else []
+        classes = analyzer.find_classes(tree) if tree else []
+        imports = analyzer.find_imports(tree) if tree else []
+        exports = analyzer.find_exports(tree) if tree else []
 
         result["summary"] = {
             "functions_count": len(functions),
@@ -703,16 +713,16 @@ async def analyze_js(
         }
 
     if analysis_type in ["functions", "all"]:
-        result["functions"] = analyzer.find_functions(tree)
+        result["functions"] = analyzer.find_functions(tree) if tree else []
 
     if analysis_type in ["classes", "all"]:
-        result["classes"] = analyzer.find_classes(tree)
+        result["classes"] = analyzer.find_classes(tree) if tree else []
 
     if analysis_type in ["imports", "all"]:
-        result["imports"] = analyzer.find_imports(tree)
+        result["imports"] = analyzer.find_imports(tree) if tree else []
 
     if analysis_type in ["exports", "all"]:
-        result["exports"] = analyzer.find_exports(tree)
+        result["exports"] = analyzer.find_exports(tree) if tree else []
 
     result_json = json.dumps(result, indent=2)
     result_with_hash, _ = await append_commit_hash(result_json, full_path, commit_hash)
@@ -756,6 +766,10 @@ async def find_js_references(
     from pathlib import Path
 
     path_obj = Path(full_path)
+
+    # Check if path exists
+    if not path_obj.exists():
+        return json.dumps({"error": f"Path not found: {path}"})
 
     analyzer = JavaScriptAnalyzer()
     all_references = []

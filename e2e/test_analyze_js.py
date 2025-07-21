@@ -3,6 +3,7 @@
 
 import json
 import os
+
 from codemcp.testing import MCPEndToEndTestCase
 
 
@@ -95,6 +96,11 @@ export default function defaultExport() {
             json_end = result.rfind("}") + 1
             json_part = result[:json_end]
             data = json.loads(json_part)
+
+            # Check if tree-sitter failed
+            if "error" in data and "Tree-sitter parsers not available" in data["error"]:
+                self.skipTest("Tree-sitter parsers not available")
+
             functions = data.get("functions", [])
             is_fallback = data.get("fallback_mode", False)
 

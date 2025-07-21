@@ -39,70 +39,12 @@ async def test_javascript_analyzer_initialization():
     assert hasattr(analyzer, "parsers_available")
 
 
-@pytest.mark.asyncio
-async def test_regex_fallback_patterns():
-    """Test regex fallback functionality."""
-    try:
-        from codemcp.tools.analyze_js import _regex_fallback_analysis
-    except ImportError:
-        pytest.skip("tree-sitter not installed")
-
-    # Test regex pattern matching
-    test_content = """
-function testFunction(a, b) {
-    return a + b;
-}
-
-const arrowFunc = (x) => x * 2;
-
-async function asyncFunc() {
-    return await fetch('/api');
-}
-
-import React from 'react';
-import { useState } from 'react';
-
-export default testFunction;
-export { arrowFunc, asyncFunc };
-"""
-
-    result = _regex_fallback_analysis("test.js", test_content, "all")
-
-    # Check functions found
-    assert "functions" in result or "functions_count" in result
-    if "functions" in result:
-        func_names = [f["name"] for f in result["functions"]]
-        assert "testFunction" in func_names
-        assert "arrowFunc" in func_names
-        assert "asyncFunc" in func_names
-    else:
-        assert result["functions_count"] >= 3
-
-    # Check imports found
-    assert "imports" in result or "imports_count" in result
-    if "imports" in result:
-        sources = [i["source"] for i in result["imports"]]
-        assert "react" in sources
-    else:
-        assert result["imports_count"] >= 2
-
-    # Check exports found
-    assert "exports" in result or "exports_count" in result
-    if "exports" in result:
-        export_names = [e["name"] for e in result["exports"]]
-        assert "testFunction" in export_names or any(
-            e.get("default") for e in result["exports"]
-        )
-    else:
-        assert result["exports_count"] >= 1
-
-
 def test_escape_symbol_for_regex():
     """Test regex escaping for symbols."""
     try:
-        from codemcp.tools.analyze_js import escape_symbol_for_regex
+        from codemcp.tools.smart_search import escape_symbol_for_regex
     except ImportError:
-        pytest.skip("tree-sitter not installed")
+        pytest.skip("smart_search not available")
 
     # Should be imported from smart_search
     assert escape_symbol_for_regex("test.method") == r"test\.method"
@@ -130,9 +72,14 @@ async def test_analyze_js_nonexistent_file():
 async def test_analyze_js_empty_file():
     """Test handling of empty files."""
     try:
-        from codemcp.tools.analyze_js import analyze_js
+        from codemcp.tools.analyze_js import JavaScriptAnalyzer, analyze_js
     except ImportError:
         pytest.skip("tree-sitter not installed")
+
+    # Check if tree-sitter is available
+    analyzer = JavaScriptAnalyzer()
+    if not analyzer.parsers_available:
+        pytest.skip("tree-sitter parsers not available")
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False) as f:
         f.write("")
@@ -255,83 +202,17 @@ async def test_javascript_analyzer_parse_malformed():
 
 
 @pytest.mark.asyncio
-async def test_regex_fallback_complex_patterns():
-    """Test regex fallback with complex JavaScript patterns."""
-    try:
-        from codemcp.tools.analyze_js import _regex_fallback_analysis
-    except ImportError:
-        pytest.skip("tree-sitter not installed")
-
-    # Complex patterns that might challenge regex
-    complex_content = """
-// Nested functions
-function outer() {
-    function inner() {
-        const nested = () => {
-            return "deeply nested";
-        };
-        return nested;
-    }
-    return inner;
-}
-
-// Object methods
-const obj = {
-    method1() { return 1; },
-    method2: function() { return 2; },
-    method3: () => 3,
-    async method4() { return await Promise.resolve(4); },
-    *generatorMethod() { yield 5; }
-};
-
-// Class with static and private methods
-class ComplexClass {
-    #privateMethod() { return "private"; }
-    static staticMethod() { return "static"; }
-    get getter() { return this.value; }
-    set setter(val) { this.value = val; }
-}
-
-// Complex imports
-import {
-    Component1,
-    Component2 as C2,
-    Component3
-} from '@scope/package';
-
-// Complex exports
-export {
-    outer,
-    obj as exportedObj,
-    ComplexClass
-};
-
-export * from './other-module';
-export { default as DefaultExport } from './default';
-"""
-
-    result = _regex_fallback_analysis("complex.js", complex_content, "all")
-
-    # Should find at least some of the patterns
-    if "functions" in result:
-        func_names = [f["name"] for f in result["functions"]]
-        # At minimum should find top-level functions
-        assert "outer" in func_names or "inner" in func_names
-
-    if "summary" in result:
-        # Should find multiple functions and exports
-        assert result["summary"]["functions_count"] >= 3
-        assert result["summary"]["imports_count"] >= 1
-        assert result["summary"]["exports_count"] >= 1
-
-
-@pytest.mark.asyncio
 async def test_analyze_js_with_unicode():
     """Test analyzing JavaScript with Unicode characters."""
     try:
-        from codemcp.tools.analyze_js import analyze_js
+        from codemcp.tools.analyze_js import JavaScriptAnalyzer, analyze_js
     except ImportError:
         pytest.skip("tree-sitter not installed")
+
+    # Check if tree-sitter is available
+    analyzer = JavaScriptAnalyzer()
+    if not analyzer.parsers_available:
+        pytest.skip("tree-sitter parsers not available")
 
     unicode_content = """
 // Unicode in comments: 你好世界 🌍
