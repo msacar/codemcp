@@ -92,7 +92,7 @@ export default function defaultExport() {
                     "chat_id": chat_id,
                 },
             )
-            json_end = result.rfind('}') + 1
+            json_end = result.rfind("}") + 1
             json_part = result[:json_end]
             data = json.loads(json_part)
             functions = data.get("functions", [])
@@ -128,6 +128,8 @@ export default function defaultExport() {
                 async_func = next(f for f in functions if f["name"] == "asyncFunction")
                 self.assertTrue(async_func["async"])
 
-                static_method = next(f for f in functions if f["name"] == "staticMethod")
+                static_method = next(
+                    f for f in functions if f["name"] == "staticMethod"
+                )
                 self.assertTrue(static_method["static"])
                 self.assertEqual(static_method["class"], "MyClass")

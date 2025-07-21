@@ -608,96 +608,6 @@ class JavaScriptAnalyzer:
         return params
 
 
-def _regex_fallback_analysis(
-    file_path: str, content: str, analysis_type: str
-) -> Dict[str, Any]:
-    """Fallback to regex-based analysis when Tree-sitter fails."""
-    logging.info(f"Using regex fallback for {file_path}")
-    result = {"fallback_mode": True}
-
-    lines = content.split("\n")
-
-    if analysis_type in ["summary", "functions", "all"]:
-        functions = []
-        # A set of regexes to find functions in various forms.
-        # This is a fallback and may not be perfect.
-        regexes = [
-            # function funcName, async function funcName
-            re.compile(r"(?:async\s+)?function\s+([a-zA-Z0-9_$]+)"),
-            # const funcName = ..., let funcName = ...
-            re.compile(r"(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*="),
-            # methodName: function, methodName: async function
-            re.compile(r"([a-zA-Z0-9_$]+)\s*:\s*(?:async\s+)?function"),
-            # methodName() {, async methodName() {, static methodName() {
-            re.compile(r"(?:static\s+)?(?:async\s+)?(constructor|(?![0-9])\w+)\s*\([^)]*\)\s*{"),
-        ]
-
-        for line_num, line in enumerate(lines, 1):
-            for regex in regexes:
-                matches = regex.findall(line)
-                for match in matches:
-                    if match:
-                        functions.append(
-                            {"name": match, "line": line_num, "type": "regex_detected"}
-                        )
-
-        # Remove duplicates that might be found by multiple regexes
-        unique_functions = []
-        seen = set()
-        for func in functions:
-            identifier = (func["name"], func["line"])
-            if identifier not in seen:
-                unique_functions.append(func)
-                seen.add(identifier)
-        functions = unique_functions
-
-        if analysis_type == "functions":
-            result["functions"] = functions
-        else:
-            result["functions_count"] = len(functions)
-
-    if analysis_type in ["summary", "imports", "all"]:
-        imports = []
-        # Updated regex to handle both ES6 imports and CommonJS requires
-        import_regex = re.compile(
-            r"(?:import\s+(?:[\w{},\s*]+\s+from\s+)?['\"]([^'\"]+)['\"]|require\s*\(\s*['\"]([^'\"]+)['\"]\s*\))",
-            re.IGNORECASE,
-        )
-        for line_num, line in enumerate(lines, 1):
-            matches = import_regex.findall(line)
-            for match in matches:
-                # match is a tuple, get the non-empty value
-                source = match[0] if match[0] else match[1]
-                if source:
-                    imports.append({"source": source, "line": line_num})
-
-        if analysis_type == "imports":
-            result["imports"] = imports
-        else:
-            result["imports_count"] = len(imports)
-
-    if analysis_type in ["summary", "exports", "all"]:
-        exports = []
-        export_regex = re.compile(
-            r"export\s+(?:default\s+)?(?:class|function|const|let|var)?\s*(\w+)?",
-            re.IGNORECASE,
-        )
-        for line_num, line in enumerate(lines, 1):
-            matches = export_regex.findall(line)
-            for match in matches:
-                if match:
-                    exports.append(
-                        {"name": match, "line": line_num, "default": "default" in line}
-                    )
-
-        if analysis_type == "exports":
-            result["exports"] = exports
-        else:
-            result["exports_count"] = len(exports)
-
-    return result
-
-
 @mcp.tool()
 async def analyze_js(
     path: str,
@@ -729,10 +639,19 @@ async def analyze_js(
     chat_id = "" if chat_id is None else chat_id
 
     # Validate analysis type
-    valid_analysis_types = {"summary", "functions", "classes", "imports", "exports", "all"}
+    valid_analysis_types = {
+        "summary",
+        "functions",
+        "classes",
+        "imports",
+        "exports",
+        "all",
+    }
     if analysis_type not in valid_analysis_types:
         return json.dumps(
-            {"error": f"Invalid analysis type: '{analysis_type}'. Must be one of {sorted(list(valid_analysis_types))}"}
+            {
+                "error": f"Invalid analysis type: '{analysis_type}'. Must be one of {sorted(list(valid_analysis_types))}"
+            }
         )
 
     # Normalize path
@@ -760,43 +679,40 @@ async def analyze_js(
     # Perform analysis
     result = {"file": path}
 
-    if tree and analyzer.parsers_available:
-        # AST-based analysis
-        if analysis_type in ["summary", "all"]:
-            functions = analyzer.find_functions(tree)
-            classes = analyzer.find_classes(tree)
-            imports = analyzer.find_imports(tree)
-            exports = analyzer.find_exports(tree)
+    if not tree or not analyzer.parsers_available:
+        return json.dumps({"error": "Failed to parse file with Tree-sitter"})
 
-            result["summary"] = {
-                "functions_count": len(functions),
-                "classes_count": len(classes),
-                "imports_count": len(imports),
-                "exports_count": len(exports),
-                "has_default_export": any(e.get("default") for e in exports),
-                "main_exports": [
-                    e.get("name") or f"default ({e.get('type', 'unknown')})"
-                    for e in exports
-                    if e.get("name") or e.get("default")
-                ][:5],
-            }
+    # AST-based analysis
+    if analysis_type in ["summary", "all"]:
+        functions = analyzer.find_functions(tree)
+        classes = analyzer.find_classes(tree)
+        imports = analyzer.find_imports(tree)
+        exports = analyzer.find_exports(tree)
 
-        if analysis_type in ["functions", "all"]:
-            result["functions"] = analyzer.find_functions(tree)
+        result["summary"] = {
+            "functions_count": len(functions),
+            "classes_count": len(classes),
+            "imports_count": len(imports),
+            "exports_count": len(exports),
+            "has_default_export": any(e.get("default") for e in exports),
+            "main_exports": [
+                e.get("name") or f"default ({e.get('type', 'unknown')})"
+                for e in exports
+                if e.get("name") or e.get("default")
+            ][:5],
+        }
 
-        if analysis_type in ["classes", "all"]:
-            result["classes"] = analyzer.find_classes(tree)
+    if analysis_type in ["functions", "all"]:
+        result["functions"] = analyzer.find_functions(tree)
 
-        if analysis_type in ["imports", "all"]:
-            result["imports"] = analyzer.find_imports(tree)
+    if analysis_type in ["classes", "all"]:
+        result["classes"] = analyzer.find_classes(tree)
 
-        if analysis_type in ["exports", "all"]:
-            result["exports"] = analyzer.find_exports(tree)
+    if analysis_type in ["imports", "all"]:
+        result["imports"] = analyzer.find_imports(tree)
 
-    else:
-        # Fallback to regex-based analysis
-        fallback_result = _regex_fallback_analysis(full_path, content, analysis_type)
-        result.update(fallback_result)
+    if analysis_type in ["exports", "all"]:
+        result["exports"] = analyzer.find_exports(tree)
 
     result_json = json.dumps(result, indent=2)
     result_with_hash, _ = await append_commit_hash(result_json, full_path, commit_hash)
@@ -869,69 +785,31 @@ async def find_js_references(
             # Try AST parsing
             tree = analyzer.parse_content(content, file_path)
 
-            if tree and analyzer.parsers_available:
-                # AST-based reference finding
-                references = analyzer.find_references(tree, symbol)
+            if not tree or not analyzer.parsers_available:
+                logging.warning(f"Skipping file due to parsing failure: {file_path}")
+                continue
 
-                # Apply context filter if specified
-                if context_filter:
-                    references = [
-                        ref for ref in references if ref["context"] == context_filter
-                    ]
+            # AST-based reference finding
+            references = analyzer.find_references(tree, symbol)
 
-                if references:
-                    files_with_references += 1
-                    # Add code snippet for each reference
-                    lines = content.split("\n")
-                    for ref in references:
-                        line_idx = ref["line"] - 1
-                        if 0 <= line_idx < len(lines):
-                            ref["code"] = lines[line_idx].strip()
+            # Apply context filter if specified
+            if context_filter:
+                references = [
+                    ref for ref in references if ref["context"] == context_filter
+                ]
 
-                    all_references.append(
-                        {"file": str(file_path), "references": references}
-                    )
-            else:
-                # Fallback to regex-based search
-                from .smart_search import get_line_context
+            if references:
+                files_with_references += 1
+                # Add code snippet for each reference
+                lines = content.split("\n")
+                for ref in references:
+                    line_idx = ref["line"] - 1
+                    if 0 <= line_idx < len(lines):
+                        ref["code"] = lines[line_idx].strip()
 
-                # Use appropriate patterns based on context filter
-                patterns = {}
-                if context_filter == "function_call":
-                    patterns["function_call"] = USAGE_PATTERNS["function_call"]
-                elif context_filter == "import":
-                    patterns["import_named"] = USAGE_PATTERNS["import_named"]
-                    patterns["import_default"] = USAGE_PATTERNS["import_default"]
-                elif context_filter:
-                    # Try to find matching pattern
-                    for name, pattern in USAGE_PATTERNS.items():
-                        if context_filter in name:
-                            patterns[name] = pattern
-                else:
-                    # Use all patterns
-                    patterns = USAGE_PATTERNS
-
-                file_refs = []
-                for pattern_name, pattern in patterns.items():
-                    matches = await get_line_context(
-                        file_path, pattern, symbol, pattern_name
-                    )
-                    for match in matches:
-                        file_refs.append(
-                            {
-                                "line": match["line_num"],
-                                "column": 0,  # Regex doesn't give exact column
-                                "context": pattern_name,
-                                "code": match["line"].strip(),
-                                "fallback": True,
-                            }
-                        )
-
-                if file_refs:
-                    files_with_references += 1
-                    all_references.append(
-                        {"file": str(file_path), "references": file_refs}
-                    )
+                all_references.append(
+                    {"file": str(file_path), "references": references}
+                )
 
         except Exception as e:
             logging.warning(f"Failed to analyze {file_path}: {e}")
@@ -1032,93 +910,41 @@ async def rename_js_symbol(
             # Parse with AST for accurate renaming
             tree = analyzer.parse_content(content, file_path)
 
-            if tree and analyzer.parsers_available:
-                # Build list of replacements with AST validation
-                replacements = []
+            if not tree or not analyzer.parsers_available:
+                logging.warning(f"Skipping file due to parsing failure: {file_path}")
+                continue
 
-                for ref in file_references:
-                    # Validate this is a safe rename
-                    if _is_safe_rename(tree, ref, old_name, new_name):
-                        replacements.append(
-                            {
-                                "line": ref["line"],
-                                "column": ref["column"],
-                                "end_column": ref.get(
-                                    "end_column", ref["column"] + len(old_name)
-                                ),
-                                "context": ref["context"],
-                            }
-                        )
+            # Build list of replacements with AST validation
+            replacements = []
 
-                if replacements:
-                    # Apply replacements (reverse order to maintain positions)
-                    new_content = _apply_replacements(
-                        content, replacements, old_name, new_name
-                    )
-
-                    changes.append(
+            for ref in file_references:
+                # Validate this is a safe rename
+                if _is_safe_rename(tree, ref, old_name, new_name):
+                    replacements.append(
                         {
-                            "file": file_path,
-                            "replacements": replacements,
-                            "old_content": content,
-                            "new_content": new_content,
+                            "line": ref["line"],
+                            "column": ref["column"],
+                            "end_column": ref.get(
+                                "end_column", ref["column"] + len(old_name)
+                            ),
+                            "context": ref["context"],
                         }
                     )
-            else:
-                # Fallback to text-based replacement with validation
-                lines = content.split("\n")
-                modified_lines = lines.copy()
-                replacements = []
 
-                for ref in sorted(
-                    file_references,
-                    key=lambda r: (r["line"], r["column"]),
-                    reverse=True,
-                ):
-                    line_idx = ref["line"] - 1
-                    if 0 <= line_idx < len(lines):
-                        line = modified_lines[line_idx]
-                        col = ref["column"]
+            if replacements:
+                # Apply replacements (reverse order to maintain positions)
+                new_content = _apply_replacements(
+                    content, replacements, old_name, new_name
+                )
 
-                        # Verify exact match and word boundaries
-                        if (
-                            col + len(old_name) <= len(line)
-                            and line[col : col + len(old_name)] == old_name
-                        ):
-                            # Check word boundaries
-                            before_ok = (
-                                col == 0
-                                or not line[col - 1].isalnum()
-                                and line[col - 1] not in "_$"
-                            )
-                            after_ok = (
-                                col + len(old_name) >= len(line)
-                                or not line[col + len(old_name)].isalnum()
-                                and line[col + len(old_name)] not in "_$"
-                            )
-
-                            if before_ok and after_ok:
-                                # Apply replacement
-                                modified_lines[line_idx] = (
-                                    line[:col] + new_name + line[col + len(old_name) :]
-                                )
-                                replacements.append(
-                                    {
-                                        "line": ref["line"],
-                                        "column": col,
-                                        "context": ref["context"],
-                                    }
-                                )
-
-                if replacements:
-                    new_content = "\n".join(modified_lines)
-                    changes.append(
-                        {
-                            "file": file_path,
-                            "replacements": replacements,
-                            "new_content": new_content,
-                        }
-                    )
+                changes.append(
+                    {
+                        "file": file_path,
+                        "replacements": replacements,
+                        "old_content": content,
+                        "new_content": new_content,
+                    }
+                )
 
         except Exception as e:
             logging.warning(f"Failed to process {file_path}: {e}")
