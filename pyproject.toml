@@ -24,6 +24,8 @@ dependencies = [
     "tree-sitter>=0.20.0",
     "tree-sitter-languages==1.10.2",
     "aiohttp>=3.8.0",
+    "aiofiles>=0.12.0",
+    "tabulate>=0.9.0",
 ]
 
 [dependency-groups]

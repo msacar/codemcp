@@ -7,9 +7,9 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      # Mount workspace directory containing multiple projects
-      # Each subdirectory with a .git folder becomes a separate project
-      - ${OPENGROK_WORKSPACE:-~/projects}:/opengrok/src:ro
+      # Mount the managed workspace containing symlinks to registered projects
+      # Each registered project appears as a subdirectory via symlinks
+      - ${HOME}/.codemcp/opengrok-workspace:/opengrok/src:ro
       # Persist OpenGrok data between restarts
       - opengrok-data:/opengrok/data
       # Custom configuration

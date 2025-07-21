@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+from pathlib import Path
 from typing import List, Union
 
 # Constants
@@ -19,6 +20,7 @@ __all__ = [
     "normalize_file_path",
     "get_edit_snippet",
     "truncate_output_content",
+    "get_config_dir",
 ]
 
 
@@ -45,6 +47,14 @@ def normalize_file_path(file_path: str) -> str:
     if not os.path.isabs(expanded_path):
         return os.path.abspath(os.path.join(os.getcwd(), expanded_path))
     return os.path.abspath(expanded_path)
+
+
+def get_config_dir() -> Path:
+    """Get the codemcp configuration directory.
+
+    Returns the path to ~/.codemcp directory.
+    """
+    return Path.home() / ".codemcp"
 
 
 def get_edit_snippet(

@@ -49,6 +49,12 @@ extension for supporting auto-approve tool use.
 
 ## Installation
 
+**⚠️ Important**: The latest version includes new dependencies (`tabulate`, `aiofiles`) for project registration. If upgrading, use `--reinstall`:
+
+```bash
+uvx --reinstall --from git+https://github.com/ezyang/codemcp@prod codemcp serve
+```
+
 I recommend this specific way of installing and using codemcp:
 
 1. Install `uv` and install git, if they are not installed already.
@@ -196,7 +202,29 @@ codemcp now includes optional OpenGrok integration for powerful code search capa
 
 ### Multi-Project Support
 
-OpenGrok indexes ALL projects in your workspace directory (default: `~/projects`). Each Git repository becomes a separate searchable project. When you use OpenGrok tools, codemcp automatically filters searches to the current project based on your working directory.
+codemcp now supports flexible project registration, allowing you to work with projects located anywhere on your filesystem:
+
+1. **Register projects** from any location:
+   ```bash
+   codemcp project register myapp /Users/me/work/myapp
+   codemcp project register backend ~/different/path/backend
+   codemcp project register legacy /mnt/archive/old-system
+   ```
+
+2. **Update Docker Compose** to use the managed workspace:
+   ```yaml
+   services:
+     opengrok:
+       volumes:
+         # Use the managed workspace with symlinks
+         - ~/.codemcp/opengrok-workspace:/opengrok/src:ro
+   ```
+
+3. **Work seamlessly** - OpenGrok automatically indexes all registered projects. When you use OpenGrok tools, codemcp automatically filters searches to the current project based on your working directory.
+
+**Alternative:** If you prefer the simple approach, you can still organize all projects under `~/projects` without using the registration system.
+
+For detailed project management commands, see [docs/PROJECT_REGISTRATION.md](docs/PROJECT_REGISTRATION.md).
 
 ### Managing OpenGrok
 

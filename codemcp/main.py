@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
+from .cli.project import cli as project_cli
 from .mcp import mcp
 from .tools.chmod import chmod  # noqa: F401
 from .tools.edit_file import edit_file  # noqa: F401
@@ -365,6 +366,10 @@ def cli(ctx: click.Context) -> None:
     # If no subcommand is provided, run the MCP server (for backwards compatibility)
     if ctx.invoked_subcommand is None:
         run()
+
+
+# Add the project command group
+cli.add_command(project_cli, name="project")
 
 
 @cli.command()

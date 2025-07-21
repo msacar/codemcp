@@ -25,12 +25,24 @@ DEFAULT_OPENGROK_URL = "http://localhost:8080/source"
 async def get_project_name(path: Optional[str] = None) -> Optional[str]:
     """Detect project name from current path.
 
+    First checks the project registry, then falls back to Git detection.
     OpenGrok uses the directory name containing .git as the project name.
     """
     if not path:
         return None
 
     try:
+        # First check project registry
+        from ..project_registry import get_registry
+
+        registry = await get_registry()
+
+        project_name = await registry.get_project_for_path(path)
+        if project_name:
+            logging.debug(f"Found project in registry: {project_name}")
+            return project_name
+
+        # Fall back to Git detection
         from ..common import normalize_file_path
         from ..git import find_git_root
 
