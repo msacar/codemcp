@@ -14,3 +14,11 @@ path = "~/.codemcp"
 # LF = Unix/Linux/macOS style (\n)
 # CRLF = Windows style (\r\n)
 line_endings = null  # null means auto-detect from .editorconfig, .gitattributes, or OS
+
+[opengrok]
+# Enable OpenGrok integration (requires Docker)
+enabled = false
+# OpenGrok server URL (if using custom setup)
+url = "http://localhost:8080/source"
+# Environment variable to set custom URL
+# export OPENGROK_URL=http://your-server:8080/source

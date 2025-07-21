@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  opengrok:
+    image: opengrok/docker:latest
+    container_name: codemcp-opengrok
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount the project directory to be indexed
+      - ${PROJECT_PATH:-../..}:/opengrok/src:ro
+      # Persist OpenGrok data between restarts
+      - opengrok-data:/opengrok/data
+      # Custom configuration
+      - ./logging.properties:/opengrok/etc/logging.properties:ro
+    environment:
+      # Indexing options
+      - INDEXER_OPT=-H -P -S -G
+      # Re-index every 10 minutes (600 seconds)
+      - REINDEX=600
+      # Number of indexer threads
+      - INDEXER_THREADS=4
+      # JVM memory settings
+      - JAVA_OPTS=-Xmx2g -Xms512m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/source/api/v1/system/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  opengrok-data:
+    name: codemcp-opengrok-data

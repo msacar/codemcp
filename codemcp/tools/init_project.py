@@ -325,6 +325,34 @@ The tool respects configuration in codemcp.toml under [project_structure]:
 - entry_points: Shows main entry points to the application
 - ignored_dirs: Excludes specified directories from analysis
 
+# Advanced Code Search with OpenGrok
+If OpenGrok is running (check with check_opengrok_status), you have access to powerful code search tools:
+
+- opengrok_search: Full-text semantic search across all files with language awareness
+  - Supports wildcards (*, ?) and regular expressions
+  - Can search in definitions, symbols, or full text
+  - Much faster than grep for large codebases
+
+- opengrok_file_search: Find files by name or pattern more efficiently than glob
+  - Supports partial matching and wildcards
+  - Can filter by directory path
+
+- opengrok_definition_search: Find where symbols (classes, functions, variables) are defined
+  - Language-aware parsing for accurate results
+  - Shows definition context
+
+- opengrok_reference_search: Find all references to a symbol
+  - Tracks usage across the entire codebase
+  - Can exclude definition locations
+
+Use OpenGrok tools when:
+- Searching large codebases where grep would be slow
+- Need language-aware search (not just text matching)
+- Finding all usages of a symbol across files
+- Searching with complex patterns or in specific file types
+
+If OpenGrok is not available, fall back to grep, glob, and smart_search tools.
+
 """
 
         # Combine system prompt, global prompt

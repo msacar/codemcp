@@ -163,6 +163,44 @@ command = ["./run_test.sh"]
 doc = "Accepts a pytest-style test selector as an argument to run a specific test."
 ```
 
+## Advanced Code Search with OpenGrok (Optional)
+
+codemcp now includes optional OpenGrok integration for powerful code search capabilities beyond what `grep` can provide. OpenGrok offers:
+
+- Language-aware code search with syntax highlighting
+- Symbol search (classes, functions, variables)
+- Cross-reference navigation
+- Search in git history
+- Fast indexed searches for large codebases
+
+### Quick Start with OpenGrok
+
+1. **Start OpenGrok** (requires Docker):
+   ```bash
+   ./opengrok.sh start
+   ```
+
+2. **Access the web UI**: http://localhost:8080/source
+
+3. **Use in codemcp**: Claude can now use advanced search tools:
+   - `opengrok_search` - Full-text semantic code search
+   - `opengrok_file_search` - Find files by name/pattern
+   - `opengrok_definition_search` - Find symbol definitions
+   - `opengrok_reference_search` - Find all references to a symbol
+
+### Managing OpenGrok
+
+```bash
+./opengrok.sh status   # Check if OpenGrok is running
+./opengrok.sh logs     # View indexing progress
+./opengrok.sh stop     # Stop OpenGrok
+./opengrok.sh clean    # Remove all indexed data
+```
+
+For more details, see [docker/opengrok/README.md](docker/opengrok/README.md).
+
+Note: OpenGrok is completely optional. All existing search tools (`grep`, `glob`, `smart_search`) continue to work without it.
+
 ## Troubleshooting
 
 To run the server with inspector, use:
