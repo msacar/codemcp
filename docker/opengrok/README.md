@@ -4,35 +4,63 @@ This directory contains the Docker configuration for running OpenGrok as a code 
 
 ## Quick Start
 
-1. Start OpenGrok:
-```bash
-cd docker/opengrok
-docker-compose up -d
-```
+1. **Prepare your workspace** (OpenGrok will index all Git projects in this directory):
+   ```bash
+   mkdir -p ~/projects
+   # Move or clone your projects into ~/projects
+   ```
 
-2. Wait for initial indexing (check logs):
-```bash
-docker-compose logs -f opengrok
-```
+2. **Start OpenGrok**:
+   ```bash
+   cd docker/opengrok
+   docker-compose up -d
+   ```
 
-3. Access OpenGrok web UI:
-- URL: http://localhost:8080/source
-- API: http://localhost:8080/source/api/v1/
+   Or to specify a custom workspace:
+   ```bash
+   OPENGROK_WORKSPACE=/path/to/workspace docker-compose up -d
+   ```
+
+3. **Wait for initial indexing** (check logs):
+   ```bash
+   docker-compose logs -f opengrok
+   ```
+
+4. **Access OpenGrok web UI**:
+   - URL: http://localhost:8080/source
+   - API: http://localhost:8080/source/api/v1/
+
+## Multi-Project Support
+
+OpenGrok automatically detects and indexes all Git repositories in the workspace directory. Each project:
+- Is indexed separately
+- Can be searched individually or together
+- Appears as a separate project in the web UI
+
+When using codemcp tools, the project is automatically detected based on the current working directory.
 
 ## Configuration
 
 ### Environment Variables
 
-- `PROJECT_PATH`: Path to the project to index (default: `../..` - the codemcp root)
+- `OPENGROK_WORKSPACE`: Path to workspace containing multiple projects (default: `~/projects`)
 - `REINDEX`: Re-indexing interval in seconds (default: 600)
 - `INDEXER_THREADS`: Number of indexing threads (default: 4)
 - `JAVA_OPTS`: JVM options (default: `-Xmx2g -Xms512m`)
 
-### Custom Project Path
+### Workspace Structure
 
-To index a different project:
-```bash
-PROJECT_PATH=/path/to/your/project docker-compose up -d
+```
+~/projects/                  # OPENGROK_WORKSPACE
+├── project1/               # Auto-detected as "project1"
+│   ├── .git/
+│   └── codemcp.toml
+├── project2/               # Auto-detected as "project2"
+│   ├── .git/
+│   └── codemcp.toml
+└── project3/               # Auto-detected as "project3"
+    ├── .git/
+    └── codemcp.toml
 ```
 
 ## Management Commands

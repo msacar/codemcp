@@ -26,8 +26,12 @@ print_usage() {
     echo "  index    - Force re-index of the project"
     echo ""
     echo "Environment variables:"
-    echo "  PROJECT_PATH - Path to index (default: current directory)"
+    echo "  OPENGROK_WORKSPACE - Path to workspace with multiple projects (default: ~/projects)"
     echo "  OPENGROK_URL - OpenGrok URL (default: http://localhost:8080/source)"
+    echo ""
+    echo "Example:"
+    echo "  # Index multiple projects in ~/projects directory"
+    echo "  OPENGROK_WORKSPACE=~/projects $0 start"
 }
 
 check_docker() {
@@ -54,9 +58,22 @@ start_opengrok() {
     echo -e "${GREEN}Starting OpenGrok...${NC}"
     cd "$DOCKER_DIR"
 
-    # Set default PROJECT_PATH if not provided
-    export PROJECT_PATH="${PROJECT_PATH:-$PROJECT_ROOT}"
-    echo "Indexing project at: $PROJECT_PATH"
+    # Set default OPENGROK_WORKSPACE if not provided
+    export OPENGROK_WORKSPACE="${OPENGROK_WORKSPACE:-$HOME/projects}"
+
+    # Create workspace directory if it doesn't exist
+    if [ ! -d "$OPENGROK_WORKSPACE" ]; then
+        echo "Creating workspace directory: $OPENGROK_WORKSPACE"
+        mkdir -p "$OPENGROK_WORKSPACE"
+    fi
+
+    echo "OpenGrok workspace: $OPENGROK_WORKSPACE"
+    echo "Projects found:"
+    for project in "$OPENGROK_WORKSPACE"/*; do
+        if [ -d "$project/.git" ]; then
+            echo "  - $(basename "$project")"
+        fi
+    done
 
     COMPOSE_CMD=$(get_compose_cmd)
     $COMPOSE_CMD up -d

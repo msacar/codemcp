@@ -175,18 +175,28 @@ codemcp now includes optional OpenGrok integration for powerful code search capa
 
 ### Quick Start with OpenGrok
 
-1. **Start OpenGrok** (requires Docker):
+1. **Prepare workspace** for multiple projects:
+   ```bash
+   mkdir -p ~/projects
+   # Move or clone your projects with codemcp.toml into ~/projects
+   ```
+
+2. **Start OpenGrok** (requires Docker):
    ```bash
    ./opengrok.sh start
    ```
 
-2. **Access the web UI**: http://localhost:8080/source
+3. **Access the web UI**: http://localhost:8080/source
 
-3. **Use in codemcp**: Claude can now use advanced search tools:
+4. **Use in codemcp**: Claude automatically detects which project you're working on and searches within it. Available tools:
    - `opengrok_search` - Full-text semantic code search
    - `opengrok_file_search` - Find files by name/pattern
    - `opengrok_definition_search` - Find symbol definitions
    - `opengrok_reference_search` - Find all references to a symbol
+
+### Multi-Project Support
+
+OpenGrok indexes ALL projects in your workspace directory (default: `~/projects`). Each Git repository becomes a separate searchable project. When you use OpenGrok tools, codemcp automatically filters searches to the current project based on your working directory.
 
 ### Managing OpenGrok
 

@@ -22,6 +22,32 @@ __all__ = [
 DEFAULT_OPENGROK_URL = "http://localhost:8080/source"
 
 
+async def get_project_name(path: Optional[str] = None) -> Optional[str]:
+    """Detect project name from current path.
+
+    OpenGrok uses the directory name containing .git as the project name.
+    """
+    if not path:
+        return None
+
+    try:
+        from ..common import normalize_file_path
+        from ..git import find_git_root
+
+        # Normalize the path
+        abs_path = normalize_file_path(path)
+
+        # Find git root
+        git_root = await find_git_root(abs_path)
+        if git_root:
+            # Get the project name (last part of the path)
+            return os.path.basename(git_root)
+    except Exception as e:
+        logging.debug(f"Could not determine project name: {e}")
+
+    return None
+
+
 async def get_opengrok_url() -> str:
     """Get OpenGrok URL from environment or use default."""
     return os.environ.get("OPENGROK_URL", DEFAULT_OPENGROK_URL)
@@ -164,6 +190,12 @@ async def opengrok_search(
         if path:
             params["path"] = path
 
+            # Auto-detect project from path
+            project_name = await get_project_name(path)
+            if project_name:
+                params["project"] = project_name
+                logging.debug(f"Auto-detected project: {project_name}")
+
         if file_filter:
             params["path"] = file_filter
 
@@ -219,6 +251,11 @@ async def opengrok_file_search(
 
         if path:
             params["path"] = f"{path}/{query}"
+
+            # Auto-detect project from path
+            project_name = await get_project_name(path)
+            if project_name:
+                params["project"] = project_name
 
         # Make the search request
         results = await make_opengrok_request("search", params)
@@ -279,6 +316,11 @@ async def opengrok_definition_search(
         if path:
             params["path"] = path
 
+            # Auto-detect project from path
+            project_name = await get_project_name(path)
+            if project_name:
+                params["project"] = project_name
+
         # Make the search request
         results = await make_opengrok_request("search", params)
 
@@ -291,11 +333,11 @@ async def opengrok_definition_search(
             output = f"Found {len(search_results)} definition(s) for '{symbol}':\n\n"
 
             for result in search_results[:20]:  # Limit to 20 definitions
-                path = result.get("path", "Unknown")
+                file_path = result.get("path", "Unknown")
                 line = result.get("lineNumber", "?")
                 content = result.get("line", "").strip()
 
-                output += f"📍 {path}:{line}\n"
+                output += f"📍 {file_path}:{line}\n"
                 output += f"   {content}\n\n"
 
         # Append commit hash
@@ -338,8 +380,14 @@ async def opengrok_reference_search(
         # Search for symbol references
         params = {"refs": symbol}
 
+        project_name = None
         if path:
             params["path"] = path
+
+            # Auto-detect project from path
+            project_name = await get_project_name(path)
+            if project_name:
+                params["project"] = project_name
 
         # Make the search request
         results = await make_opengrok_request("search", params)
@@ -350,6 +398,9 @@ async def opengrok_reference_search(
             def_params = {"def": symbol}
             if path:
                 def_params["path"] = path
+                # Use the same project name for definition search
+                if project_name:
+                    def_params["project"] = project_name
             def_results = await make_opengrok_request("search", def_params)
 
             # Create set of definition locations

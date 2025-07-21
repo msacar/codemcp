@@ -7,23 +7,26 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      # Mount the project directory to be indexed
-      - ${PROJECT_PATH:-../..}:/opengrok/src:ro
+      # Mount workspace directory containing multiple projects
+      # Each subdirectory with a .git folder becomes a separate project
+      - ${OPENGROK_WORKSPACE:-~/projects}:/opengrok/src:ro
       # Persist OpenGrok data between restarts
       - opengrok-data:/opengrok/data
       # Custom configuration
       - ./logging.properties:/opengrok/etc/logging.properties:ro
     environment:
-      # Indexing options with project detection but limited to Git
+      # Indexing options with automatic project detection
+      # -H: Generate history cache
+      # -P: Generate a project for each top-level directory in source root
+      # -S: Search for "external" source repositories (Git, SVN, etc.)
+      # -G: Only index files tracked by Git
       - INDEXER_OPT=-H -P -S -G
       # Re-index every 10 minutes (600 seconds)
       - REINDEX=600
       # Number of indexer threads
       - INDEXER_THREADS=4
-      # JVM memory settings with Perforce disabled
-      - JAVA_OPTS=-Xmx2g -Xms512m -Dopengrok.history.perforce=false
-      # Only enable Git repositories
-      - OPENGROK_REPOSITORIES=git
+      # JVM memory settings
+      - JAVA_OPTS=-Xmx2g -Xms512m
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/source/api/v1/system/ping || exit 1"]
       interval: 30s
