@@ -62,6 +62,7 @@ async def get_project_name(path: Optional[str] = None) -> Optional[str]:
 
 async def get_opengrok_url() -> str:
     """Get OpenGrok URL from environment or use default."""
+    print(os.environ.get("OPENGROK_URL", DEFAULT_OPENGROK_URL))
     return os.environ.get("OPENGROK_URL", DEFAULT_OPENGROK_URL)
 
 
@@ -69,12 +70,17 @@ async def check_opengrok_status() -> bool:
     """Check if OpenGrok server is available."""
     try:
         url = await get_opengrok_url()
+        logging.info(f"Checking OpenGrok status at: {url}")
+
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{url}/api/v1/system/ping", timeout=aiohttp.ClientTimeout(total=5)
             ) as response:
+                logging.info(f"OpenGrok ping: {url} -> {response.status}")
                 return response.status == 200
-    except Exception:
+    except Exception as e:
+        logging.warning(f"OpenGrok unavailable: {e}")
+
         return False
 
 

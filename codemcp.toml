@@ -38,8 +38,6 @@ doc = "Updates expecttest failing tests with their new values, akin to running w
 
 [opengrok]
 # Enable OpenGrok integration (requires Docker)
-enabled = false
-# OpenGrok server URL (if using custom setup)
-url = "http://localhost:8080/source"
+enabled = true
 # Environment variable to set custom URL
 OPENGROK_URL =  "http://localhost:8080"
