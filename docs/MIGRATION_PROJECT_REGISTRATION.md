@@ -98,17 +98,3 @@ If you want to go back to the old approach:
    rm -rf ~/.codemcp/projects.toml
    rm -rf ~/.codemcp/opengrok-workspace
    ```
-
-## FAQ
-
-**Q: Do I need to move my projects out of ~/projects?**
-A: No! You can register projects that are already in ~/projects. The registration system just adds flexibility.
-
-**Q: Will this affect my existing Claude conversations?**
-A: No, existing functionality remains the same. The registration system only affects project detection and OpenGrok searches.
-
-**Q: Can I mix registered and unregistered projects?**
-A: If you're using the old docker-compose mount (`~/projects`), yes. Otherwise, only registered projects will be indexed by OpenGrok.
-
-**Q: What happens to Git-based project detection?**
-A: It still works as a fallback. If a project isn't registered, codemcp will try to detect the project name from the Git repository.
