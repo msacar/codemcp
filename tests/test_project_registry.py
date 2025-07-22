@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Tests for project registry functionality."""
+"""Tests for project registry functionality.
+
+NOTE: These tests were written for the symlink-based implementation.
+They need to be updated for the current bind mount approach where:
+- No symlinks are created
+- register_project returns instructions instead of creating symlinks
+- sync_workspace functionality is removed
+"""
 
 import tempfile
 from pathlib import Path

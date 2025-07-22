@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""End-to-end tests for project CLI commands."""
+"""End-to-end tests for project CLI commands.
+
+NOTE: These tests were written for the symlink-based implementation.
+They need to be updated for the current bind mount approach where:
+- register command returns docker-compose instructions
+- sync command no longer exists
+- list command no longer shows symlink status
+"""
 
 import subprocess
 import tempfile

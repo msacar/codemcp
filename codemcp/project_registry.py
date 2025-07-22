@@ -17,13 +17,11 @@ class ProjectRegistry:
     def __init__(self):
         self.config_dir = get_config_dir()
         self.registry_path = self.config_dir / "projects.toml"
-        self.workspace_dir = self.config_dir / "opengrok-workspace"
         self._cache: Optional[Dict[str, str]] = None
 
     async def ensure_initialized(self):
-        """Ensure registry file and workspace directory exist."""
+        """Ensure registry file exists."""
         self.config_dir.mkdir(parents=True, exist_ok=True)
-        self.workspace_dir.mkdir(parents=True, exist_ok=True)
 
         if not self.registry_path.exists():
             # Create default registry
@@ -44,8 +42,11 @@ class ProjectRegistry:
             self._cache = config.get("projects", {})
             return self._cache
 
-    async def register_project(self, name: str, path: str) -> None:
-        """Register a new project or update existing one."""
+    async def register_project(self, name: str, path: str) -> str:
+        """Register a new project or update existing one.
+
+        Returns: Instructions for updating docker-compose.yml
+        """
         # Validate path exists
         project_path = Path(path).expanduser().resolve()
         if not project_path.exists():
@@ -66,17 +67,34 @@ class ProjectRegistry:
         # Clear cache
         self._cache = None
 
-        # Update symlink
-        await self.update_workspace_symlink(name, project_path)
-
         logging.info(f"Registered project '{name}' -> {project_path}")
 
-    async def unregister_project(self, name: str) -> None:
-        """Remove a project from the registry."""
+        # Return instructions for docker-compose.yml
+        instructions = f"""
+✅ Successfully registered project '{name}' -> {project_path}
+
+To complete the setup, add this line to docker/opengrok/docker-compose.yml:
+
+      - {project_path}:/opengrok/src/{name}:ro
+
+Add it under the 'volumes:' section, then restart OpenGrok:
+  cd ~/codemcp/docker/opengrok
+  docker-compose down
+  docker-compose up -d
+"""
+        return instructions
+
+    async def unregister_project(self, name: str) -> str:
+        """Remove a project from the registry.
+
+        Returns: Instructions for updating docker-compose.yml
+        """
         projects = await self.load_projects()
 
         if name not in projects:
             raise ValueError(f"Project '{name}' not found in registry")
+
+        project_path = projects[name]
 
         # Remove from registry
         del projects[name]
@@ -87,41 +105,22 @@ class ProjectRegistry:
         # Clear cache
         self._cache = None
 
-        # Remove symlink
-        symlink_path = self.workspace_dir / name
-        if symlink_path.is_symlink():
-            symlink_path.unlink()
-            logging.info(f"Removed symlink for project '{name}'")
+        logging.info(f"Unregistered project '{name}'")
 
-    async def update_workspace_symlink(self, name: str, target_path: Path) -> None:
-        """Create or update symlink in OpenGrok workspace."""
-        symlink_path = self.workspace_dir / name
+        # Return instructions
+        instructions = f"""
+✅ Successfully unregistered project '{name}'
 
-        # Remove existing symlink if it exists
-        if symlink_path.exists() or symlink_path.is_symlink():
-            symlink_path.unlink()
+To complete the removal, remove this line from docker/opengrok/docker-compose.yml:
 
-        # Create new symlink
-        symlink_path.symlink_to(target_path)
-        logging.info(f"Created symlink: {symlink_path} -> {target_path}")
+      - {project_path}:/opengrok/src/{name}:ro
 
-    async def sync_workspace(self) -> None:
-        """Ensure all registered projects have symlinks in workspace."""
-        projects = await self.load_projects()
-
-        # Remove orphaned symlinks
-        for item in self.workspace_dir.iterdir():
-            if item.is_symlink() and item.name not in projects:
-                item.unlink()
-                logging.info(f"Removed orphaned symlink: {item}")
-
-        # Create/update symlinks for all projects
-        for name, path in projects.items():
-            project_path = Path(path)
-            if project_path.exists():
-                await self.update_workspace_symlink(name, project_path)
-            else:
-                logging.warning(f"Project path no longer exists: {name} -> {path}")
+Then restart OpenGrok:
+  cd ~/codemcp/docker/opengrok
+  docker-compose down
+  docker-compose up -d
+"""
+        return instructions
 
     async def get_project_for_path(self, path: str) -> Optional[str]:
         """Find which registered project contains the given path."""
@@ -150,15 +149,12 @@ class ProjectRegistry:
 
         for name, path in projects.items():
             project_path = Path(path)
-            symlink_path = self.workspace_dir / name
 
             info = {
                 "name": name,
                 "path": path,
                 "exists": project_path.exists(),
                 "is_git": (project_path / ".git").exists(),
-                "symlink_ok": symlink_path.is_symlink()
-                and symlink_path.resolve() == project_path.resolve(),
             }
             result.append(info)
 

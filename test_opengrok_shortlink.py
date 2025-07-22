@@ -9,8 +9,8 @@ sys.path.insert(0, "/Users/mustafaacar/codemcp")
 
 from codemcp.tools.opengrok_search import (
     check_opengrok_status,
-    get_project_name,
     get_opengrok_url,
+    get_project_name,
     opengrok_file_search,
 )
 

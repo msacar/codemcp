@@ -130,17 +130,13 @@ Multiple projects can use the same MCP server simultaneously because:
 
 ### Docker Volume Mapping
 
-The docker-compose.yml now uses:
+The docker-compose.yml uses direct bind mounts for each project:
 ```yaml
-- ~/.codemcp/opengrok-workspace:/opengrok/src:ro
-```
-
-This workspace contains symlinks:
-```
-~/.codemcp/opengrok-workspace/
-├── project-a -> /Users/me/work/project-a
-├── project-b -> /mnt/server/project-b
-└── project-c -> /home/shared/project-c
+volumes:
+  - /Users/me/work/project-a:/opengrok/src/project-a:ro
+  - /mnt/server/project-b:/opengrok/src/project-b:ro
+  - /home/shared/project-c:/opengrok/src/project-c:ro
+  # Each project mounted separately
 ```
 
 OpenGrok sees these as regular directories and indexes them as separate projects.

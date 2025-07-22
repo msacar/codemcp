@@ -2,10 +2,10 @@
 """Generate docker-compose override file for registered projects."""
 
 import asyncio
-import os
 import sys
-import yaml
 from pathlib import Path
+
+import yaml
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
