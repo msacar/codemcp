@@ -30,16 +30,8 @@ def register(name: str, path: str):
     async def _register():
         registry = await get_registry()
         try:
-            await registry.register_project(name, path)
-            click.echo(f"✅ Successfully registered project '{name}' -> {path}")
-
-            # Check if OpenGrok workspace is properly set up
-            workspace_dir = registry.workspace_dir
-            if not workspace_dir.exists():
-                click.echo(
-                    f"\n⚠️  OpenGrok workspace directory does not exist: {workspace_dir}"
-                )
-                click.echo("   Run 'codemcp project sync' to create symlinks")
+            instructions = await registry.register_project(name, path)
+            click.echo(instructions)
 
         except Exception as e:
             click.echo(f"❌ Failed to register project: {e}", err=True)
@@ -56,8 +48,8 @@ def unregister(name: str):
     async def _unregister():
         registry = await get_registry()
         try:
-            await registry.unregister_project(name)
-            click.echo(f"✅ Successfully unregistered project '{name}'")
+            instructions = await registry.unregister_project(name)
+            click.echo(instructions)
         except ValueError as e:
             click.echo(f"❌ {e}", err=True)
             raise click.Abort()
@@ -81,57 +73,25 @@ def list():
             return
 
         # Prepare table data
-        headers = ["Name", "Path", "Status", "Git", "Symlink"]
+        headers = ["Name", "Path", "Status", "Git"]
         rows = []
 
         for proj in projects:
             status = "✅ OK" if proj["exists"] else "❌ Missing"
             git = "✅" if proj["is_git"] else "⚠️"
-            symlink = "✅" if proj["symlink_ok"] else "❌"
 
-            rows.append([proj["name"], proj["path"], status, git, symlink])
+            rows.append([proj["name"], proj["path"], status, git])
 
         click.echo("\nRegistered Projects:")
         click.echo(tabulate(rows, headers=headers, tablefmt="grid"))
 
-        # Show workspace location
-        click.echo(f"\nOpenGrok workspace: {registry.workspace_dir}")
+        # Show docker-compose hint
+        click.echo(
+            "\nRemember to add these projects to docker/opengrok/docker-compose.yml"
+        )
+        click.echo("See 'codemcp project register' output for details.")
 
     asyncio.run(_list())
-
-
-@project_cli.command()
-def sync():
-    """Sync workspace symlinks with registered projects."""
-
-    async def _sync():
-        registry = await get_registry()
-        click.echo("Syncing OpenGrok workspace...")
-
-        try:
-            await registry.sync_workspace()
-
-            # Show results
-            projects = await registry.list_projects()
-            synced = sum(1 for p in projects if p["symlink_ok"])
-            total = len(projects)
-
-            click.echo(f"✅ Synced {synced}/{total} projects")
-
-            # Report any issues
-            for proj in projects:
-                if not proj["exists"]:
-                    click.echo(
-                        f"⚠️  Project '{proj['name']}' path no longer exists: {proj['path']}"
-                    )
-                elif not proj["symlink_ok"]:
-                    click.echo(f"⚠️  Failed to create symlink for '{proj['name']}'")
-
-        except Exception as e:
-            click.echo(f"❌ Sync failed: {e}", err=True)
-            raise click.Abort()
-
-    asyncio.run(_sync())
 
 
 @project_cli.command()

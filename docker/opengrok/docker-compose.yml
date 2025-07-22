@@ -7,9 +7,13 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      # Mount the managed workspace containing symlinks to registered projects
-      # Each registered project appears as a subdirectory via symlinks
-      - ${HOME}/.codemcp/opengrok-workspace:/opengrok/src:ro
+      # Mount individual projects directly
+      # Add your projects here:
+      - /Users/mustafaacar/retter/shortlink:/opengrok/src/shortlink:ro
+      - /Users/mustafaacar/codemcp:/opengrok/src/codemcp:ro
+      # Add more projects as needed by following this pattern:
+      # - /path/to/your/project:/opengrok/src/project-name:ro
+
       # Persist OpenGrok data between restarts
       - opengrok-data:/opengrok/data
       # Custom configuration

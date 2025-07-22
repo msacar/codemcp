@@ -1,5 +1,9 @@
 # Testing Project Registration - Step by Step Guide
 
+> ⚠️ **Note**: This document describes testing for the original symlink-based implementation.
+> The current implementation uses direct Docker bind mounts instead.
+> See `OPENGROK_BIND_MOUNTS.md` for the current architecture.
+
 This guide will help you test the new project registration feature from start to finish.
 
 ## Prerequisites

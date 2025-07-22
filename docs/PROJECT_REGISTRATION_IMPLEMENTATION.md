@@ -1,5 +1,9 @@
 # Project Registration Implementation Summary
 
+> ⚠️ **Note**: This document describes the original symlink-based implementation.
+> The current implementation uses direct Docker bind mounts instead.
+> See `OPENGROK_BIND_MOUNTS.md` for the current architecture.
+
 ## Overview
 
 Implemented a manual project registration system for codemcp that allows users to explicitly map project names to filesystem paths, enabling work with projects located anywhere on the system.
