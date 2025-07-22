@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0" class="java.beans.XMLDecoder">
+ <object class="org.opengrok.indexer.configuration.Configuration">
+  <void property="projects">
+   <object class="java.util.HashMap">
+    <void method="put">
+     <string>shortlink</string>
+     <object class="org.opengrok.indexer.configuration.Project">
+      <void property="name">
+       <string>shortlink</string>
+      </void>
+      <void property="path">
+       <string>/shortlink</string>
+      </void>
+      <void property="tabSize">
+       <int>4</int>
+      </void>
+     </object>
+    </void>
+    <void method="put">
+     <string>codemcp</string>
+     <object class="org.opengrok.indexer.configuration.Project">
+      <void property="name">
+       <string>codemcp</string>
+      </void>
+      <void property="path">
+       <string>/codemcp</string>
+      </void>
+      <void property="tabSize">
+       <int>4</int>
+      </void>
+     </object>
+    </void>
+   </object>
+  </void>
+  <void property="sourceRoot">
+   <string>/opengrok/src</string>
+  </void>
+  <void property="dataRoot">
+   <string>/opengrok/data</string>
+  </void>
+  <void property="historyEnabled">
+   <boolean>false</boolean>
+  </void>
+  <void property="remoteScmSupported">
+   <boolean>false</boolean>
+  </void>
+ </object>
+</java>

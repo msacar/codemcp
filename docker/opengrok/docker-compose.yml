@@ -9,24 +9,26 @@ services:
     volumes:
       # Mount individual projects directly
       # Add your projects here:
-      - /Users/mustafaacar/retter/shortlink:/opengrok/src/shortlink:ro
-      - /Users/mustafaacar/codemcp:/opengrok/src/codemcp:ro
+      - /Users/mustafaacar/retter/shortlink:/opengrok/src/shortlink:rw
+      - /Users/mustafaacar/codemcp:/opengrok/src/codemcp:rw
       # Add more projects as needed by following this pattern:
       # - /path/to/your/project:/opengrok/src/project-name:ro
 
       # Persist OpenGrok data between restarts
       - opengrok-data:/opengrok/data
+      - ./mirror.yml:/opengrok/etc/mirror.yml:ro
       # Custom configuration
       - ./logging.properties:/opengrok/etc/logging.properties:ro
     environment:
       # Indexing options with automatic project detection
       # -H: Generate history cache
       # -P: Generate a project for each top-level directory in source root
-      # -S: Search for "external" source repositories (Git, SVN, etc.)
-      # -G: Only index files tracked by Git
-      - INDEXER_OPT=-H -P -S -G
-      # Re-index every 10 minutes (600 seconds)
-      - REINDEX=600
+      # NOTE: -S and -G flags removed to fix "You must select a project!" error
+      # These flags require write access for git operations on read-only mounts
+      # -H (history) is disabled because it can cause issues with read-only git repos.
+      - INDEXER_OPT=-P -i node_modules -i cdk.out
+      - REINDEX=1
+      - SYNC_PERIOD_MINUTES=60  # re‑run every hour
       # Number of indexer threads
       - INDEXER_THREADS=4
       # JVM memory settings
