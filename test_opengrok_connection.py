@@ -2,6 +2,7 @@
 """Quick test to check OpenGrok connection."""
 
 import asyncio
+
 import aiohttp
 
 

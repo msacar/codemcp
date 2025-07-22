@@ -34,7 +34,7 @@ services:
       # JVM memory settings
       - JAVA_OPTS=-Xmx2g -Xms512m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/source/api/v1/system/ping || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/system/ping || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

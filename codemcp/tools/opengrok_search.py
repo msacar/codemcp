@@ -207,6 +207,10 @@ async def opengrok_search(
             if project_name:
                 params["project"] = project_name
                 logging.debug(f"Auto-detected project: {project_name}")
+            else:
+                logging.warning(
+                    f"Could not detect project name for path: {path}. Proceeding without project restriction."
+                )
 
         if file_filter:
             params["path"] = file_filter

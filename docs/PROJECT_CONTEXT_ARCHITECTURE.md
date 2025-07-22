@@ -140,6 +140,7 @@ volumes:
 ```
 
 OpenGrok sees these as regular directories and indexes them as separate projects.
+https://opengrok.docs.apiary.io/
 
 ## Limitations
 
