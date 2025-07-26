@@ -19,6 +19,10 @@ services:
       - ./mirror.yml:/opengrok/etc/mirror.yml:ro
       # Custom configuration
       - ./logging.properties:/opengrok/etc/logging.properties:ro
+      # Ctags configuration for reference tags
+      - ./ctags.conf:/opengrok/etc/ctags.conf:ro
+      # Override configuration
+      #- ./configuration.xml:/opengrok/etc/configuration.xml:ro
     environment:
       # Indexing options with automatic project detection
       # -H: Generate history cache
@@ -26,7 +30,7 @@ services:
       # NOTE: -S and -G flags removed to fix "You must select a project!" error
       # These flags require write access for git operations on read-only mounts
       # -H (history) is disabled because it can cause issues with read-only git repos.
-      - INDEXER_OPT=-P -i d:node_modules -i d:cdk.out -i d:dist -i d:\.venv
+      - INDEXER_OPT=-P -i d:node_modules -i d:cdk.out -i d:dist -i d:\.venv -W /opengrok/etc/configuration.xml -o /opengrok/etc/ctags.conf
       - REINDEX=1
       - SYNC_PERIOD_MINUTES=60  # re‑run every hour
       # Number of indexer threads

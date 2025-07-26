@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.applications import Starlette
 from starlette.requests import Request
 
+
 class ResponseBodyLoggerMiddleware:
     def __init__(self, app):
         self.app = app
@@ -29,6 +30,8 @@ class ResponseBodyLoggerMiddleware:
             await self.app(scope, receive_with_body, send)
         else:
             await self.app(scope, receive, send)
+
+
 from starlette.routing import Mount
 
 from .cli.project import cli as project_cli

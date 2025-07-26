@@ -70,6 +70,15 @@ The index is being built. Check progress:
 docker logs -f codemcp-opengrok
 ```
 
+### OpenGrok hangs during startup
+If OpenGrok appears stuck after "Scanning for repositories":
+1. Run the diagnostic script: `./diagnose-opengrok.sh`
+2. For a clean restart: `./diagnose-opengrok.sh --clean`
+3. Common causes:
+   - Large git repositories (especially with history enabled)
+   - Permission issues with mounted volumes
+   - Too many files to index
+
 ### Projects not appearing
 1. Ensure the path is added to docker-compose.yml
 2. Restart OpenGrok: `docker-compose down && docker-compose up -d`
@@ -86,3 +95,13 @@ Ensure Docker Desktop has access to your project directories:
 - Memory: 2GB max, 512MB initial
 - Indexer threads: 4
 - Only Git-tracked files are indexed
+- Universal Ctags: Configured via `ctags.conf` with `--extras=+r` flag to enable reference tags for imports
+
+### Ctags Configuration
+
+The `ctags.conf` file configures Universal Ctags to:
+- Enable reference tags (`--extras=+r`) for better tracking of imports and symbol usage
+- Support JavaScript and TypeScript files with all common extensions
+- Properly index import statements with tag information
+
+This improves OpenGrok's ability to distinguish between symbol definitions and references.
