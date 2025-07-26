@@ -19,9 +19,9 @@ __all__ = [
 
 @mcp.tool()
 async def project_overview(
+    chat_id: str,
     path: Optional[str] = None,
     max_depth: int = 3,
-    chat_id: Optional[str] = None,
     commit_hash: Optional[str] = None,
 ) -> str:
     """Get a high-level overview of the project structure.

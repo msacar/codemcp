@@ -184,9 +184,9 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
 @mcp.tool()
 async def grep(
     pattern: str,
-    path: str | None = None,
-    include: str | None = None,
-    chat_id: str | None = None,
+    path: str,
+    include: str | None,
+    chat_id: str,
     commit_hash: str | None = None,
 ) -> str:
     """Searches for files containing a specified pattern (regular expression) using git grep.

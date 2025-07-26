@@ -11,6 +11,24 @@ import pathspec
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.applications import Starlette
+from starlette.requests import Request
+
+class ResponseBodyLoggerMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["method"] == "POST":
+            request = Request(scope, receive)
+            body = await request.body()
+            logging.info(f"Raw request body: {body.decode('utf-8', errors='ignore')}")
+
+            async def receive_with_body():
+                return {"type": "http.request", "body": body, "more_body": False}
+
+            await self.app(scope, receive_with_body, send)
+        else:
+            await self.app(scope, receive, send)
 from starlette.routing import Mount
 
 from .cli.project import cli as project_cli
@@ -136,7 +154,7 @@ def configure_logging(log_file: str = "codemcp.log") -> None:
     log_level = log_level_map.get(log_level_str.upper(), logging.INFO)
 
     # Force DEBUG level if DESKAID_DEBUG is set (for backward compatibility)
-    debug_mode = False
+    debug_mode = True
     if os.environ.get("DESKAID_DEBUG"):
         log_level = logging.DEBUG
         debug_mode = True
@@ -515,6 +533,9 @@ def create_sse_app(allowed_origins: Optional[List[str]] = None) -> Starlette:
             Mount("/", app=mcp.sse_app()),
         ]
     )
+
+    # Add the request body sanitizer middleware
+    app.add_middleware(ResponseBodyLoggerMiddleware)
 
     # Add CORS middleware to the app
     app.add_middleware(

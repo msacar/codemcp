@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 # Default OpenGrok server URL
-DEFAULT_OPENGROK_URL = "http://localhost:8080/source"
+DEFAULT_OPENGROK_URL = "http://localhost:8080"
 
 
 async def get_project_name(path: Optional[str] = None) -> Optional[str]:

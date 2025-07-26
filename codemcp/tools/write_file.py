@@ -24,9 +24,9 @@ __all__ = [
 @mcp.tool()
 async def write_file(
     path: str,
-    content: str | dict | list | None = None,
-    description: str | None = None,
-    chat_id: str | None = None,
+    content: str | dict | list,
+    description: str,
+    chat_id: str,
     commit_hash: str | None = None,
 ) -> str:
     """Write a file to the local filesystem. Overwrites the existing file if there is one.
